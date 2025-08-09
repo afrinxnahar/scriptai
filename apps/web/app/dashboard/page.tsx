@@ -7,21 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PenTool, Upload, ImageIcon, FileText, Plus, ArrowRight, Youtube, XCircle } from "lucide-react"
 import { useSupabase } from "@/components/supabase-provider"
 import { toast } from "sonner"
+import { Script, UserProfile } from "@repo/validation"
 
-interface UserProfile {
-  avatar_url: string
-  email: string
-  full_name: string
-  credits: number
-  ai_trained: boolean
-  youtube_connected: boolean
-}
 
-interface Script {
-  id: string
-  title: string
-  created_at: string
-}
 
 export default function Dashboard() {
   const { supabase, user, session } = useSupabase()

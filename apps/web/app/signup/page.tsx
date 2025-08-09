@@ -172,7 +172,7 @@ export default function MultiStepSignupPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0.0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }} className="flex w-full justify-center md:justify-end">
-          <Card className="w-full max-w-md bg-white/20 dark:bg-black/20 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl">
+          <Card className="w-full max-w-md bg-white/30 dark:bg-black/20 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl h-full bg-clip-padding backdrop-filter bg-opacity-20">
             <CardHeader className="space-y-4 pt-8">
               <div className="flex justify-center md:hidden"><Image src={logo} alt="Script AI" width={60} height={60} /></div>
               <CardTitle className="text-2xl text-center text-slate-900 dark:text-white">Create an account</CardTitle>
