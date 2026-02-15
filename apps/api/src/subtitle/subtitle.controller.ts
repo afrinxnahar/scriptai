@@ -70,8 +70,6 @@ export class SubtitleController {
     return this.subtitleService.upload(file, body, userId, file.originalname);
   }
 
-
-
   @Patch()
   @UsePipes(new ZodValidationPipe(UpdateSubtitleSchema))
   update(@Body() body: UpdateSubtitleInput, @Req() req: AuthRequest) {
