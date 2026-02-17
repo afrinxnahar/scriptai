@@ -1,5 +1,5 @@
 import { useState, useEffect, RefObject } from 'react';
-import { SubtitleLine } from "@repo/validation";
+import type { SubtitleLine } from "@repo/validation";
 import { timeToSeconds } from '@/utils/timeUtils';
 
 export function useVideoPlayer(
