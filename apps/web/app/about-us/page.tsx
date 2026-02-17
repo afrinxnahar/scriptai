@@ -3,193 +3,358 @@
 import Footer from "@/components/footer"
 import LandingPageNavbar from "@/components/landingPage/LandingPageNavbar"
 import { SparklesCore } from "@/components/ui/sparkles"
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect"
+import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards"
+import { BackgroundBeams } from "@/components/ui/background-beams"
+import { MButton } from "@/components/ui/moving-border"
 import { motion } from "motion/react"
+import Link from "next/link"
+import {
+  Zap, Heart, Users, TrendingUp, Lightbulb,
+  Video, PenTool, Search, ImageIcon, BookOpen,
+  FileText, Volume2, Gift, ArrowRight, Rocket,
+  Globe, MessageSquare, Settings, Sparkles,
+} from "lucide-react"
+import FeatureCard from "@/components/feature-card"
+import { useEffect } from "react"
+import Lenis from "lenis"
+import "lenis/dist/lenis.css"
+
+const benefits = [
+  {
+    title: "Truly Personalized Output",
+    description: "Unlike generic AI, Creator AI trains on your past videos — every output reflects your unique voice, tone, and style.",
+    icon: Sparkles,
+    gradient: "from-purple-500 to-indigo-500",
+  },
+  {
+    title: "Save Hours of Brain Drain",
+    description: "Reduces scripting time from 2–5 hours to minutes, enabling consistent posting and preventing burnout.",
+    icon: Zap,
+    gradient: "from-pink-500 to-rose-500",
+  },
+  {
+    title: "Boost Creative Confidence",
+    description: "Eliminates blank-page syndrome with brainstorming, generation, and enhancement — all personalized to your channel.",
+    icon: Lightbulb,
+    gradient: "from-cyan-500 to-blue-500",
+  },
+  {
+    title: "Your AI Creative Team",
+    description: "Functions as a copywriter, researcher, scriptwriter, thumbnail assistant, and title generator — trained on you.",
+    icon: Users,
+    gradient: "from-emerald-500 to-green-500",
+  },
+  {
+    title: "Authentic Engagement",
+    description: "Because every script sounds like you, your audience stays connected — no generic feel, just real content.",
+    icon: TrendingUp,
+    gradient: "from-amber-500 to-orange-500",
+  },
+  {
+    title: "Grow at Your Pace",
+    description: "Templates, quick-start tools, and AI training that adapts to your evolving style as your channel grows.",
+    icon: Heart,
+    gradient: "from-rose-500 to-pink-500",
+  },
+]
+
+const features = [
+  { title: "YouTube Channel Connection", icon: Video, description: "Link your channel to personalize your AI experience." },
+  { title: "Personalized AI Training", icon: Sparkles, description: "Upload 3–5 videos to train a custom AI model for your style and language." },
+  { title: "Script Generation", icon: PenTool, description: "Input a topic and context to generate personalized scripts or let AI modify your existing draft." },
+  { title: "Topic & Idea Research", icon: Search, description: "Add relevant links and stats from the web, uploaded PDFs, or let AI do the research for you." },
+  { title: "Thumbnail Generator", icon: ImageIcon, description: "Creates thumbnails based on your past thumbnail style." },
+  { title: "Course Module", icon: BookOpen, description: "Dedicated feature for educators to create complete course modules and playlists." },
+  { title: "Subtitle Generator", icon: FileText, description: "Creates multi-language, editable subtitles for your videos." },
+  { title: "Audio Translation", icon: Volume2, description: "Generate audio in multiple languages in your own voice using generative voice cloning." },
+  { title: "Referral Program", icon: Gift, description: "Earn credits via referrals to unlock premium features." },
+]
+
+const futureFeatures = [
+  { title: "AI Video Generator", description: "Create AI-generated videos and reels like Sora and Veo.", icon: Rocket },
+  { title: "Multi-Platform Support", description: "Expand features for TikTok, Instagram Reels, and podcasts.", icon: Globe },
+  { title: "Collaboration Mode", description: "Real-time collaboration for teams.", icon: MessageSquare },
+  { title: "Advanced Personalization", description: "Train AI with custom fine-tuned models.", icon: Settings },
+  { title: "Creator Community", description: "Share generated content, templates, best prompts, and experiences.", icon: Users },
+]
+
+const niches = [
+  "Technology", "Media", "Book Reviews", "Movie Reviews",
+  "Finance", "Productivity", "Entertainment", "Tutorials", "Education",
+]
 
 export default function AboutPage() {
+  useEffect(() => {
+    const lenis = new Lenis({ autoRaf: true })
+    return () => lenis.destroy()
+  }, [])
+
   return (
-    <div>
-      <section className="py-20 px-6 md:px-12 lg:px-24 bg-gradient-to-b from-white to-gray-50 text-gray-800">
-        <LandingPageNavbar />
-
-        <div aria-hidden="true" className="absolute inset-0 -z-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-purple-100/40 rounded-full blur-3xl" />
-          <SparklesCore
-            background="transparent"
-            minSize={0.2}
-            maxSize={0.8}
-            className="absolute inset-0 w-full h-full z-0"
-            particleColor="#a855f7"
-            particleDensity={35}
-          />
-        </div>
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="max-w-3xl mx-auto text-center mb-16"
-        >
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">About Script AI</h1>
-          <p className="text-lg md:text-xl text-gray-600">
-            Empowering creators, researchers, and storytellers to turn ideas into impactful scripts and insights — instantly.
-          </p>
-        </motion.div>
-
-        {/* Who We Are */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <h2 className="text-3xl font-semibold mb-4">Who We Are</h2>
-          <p className="text-gray-700 leading-relaxed">
-            Script AI is an AI-powered platform built to help writers, content creators, and researchers bring their ideas to life faster.
-            Whether you’re drafting a YouTube script, podcast outline, film scene, or research paper, Script AI blends creative intelligence
-            with structured insight to help you go from concept to completion in minutes.
-          </p>
-        </motion.div>
-
-        {/* Mission */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <h2 className="text-3xl font-semibold mb-4">Our Mission</h2>
-          <p className="text-gray-700 leading-relaxed">
-            Our mission is simple:{" "}
-            <span className="font-semibold">
-              to empower anyone with an idea to create impactful content — without friction or creative block.
-            </span>{" "}
-            We’re redefining how people write, research, and tell stories by making AI a true creative partner, not just a writing assistant.
-          </p>
-        </motion.div>
-
-        {/* What We Do */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <h2 className="text-3xl font-semibold mb-4">What We Do</h2>
-          <ul className="space-y-4 text-gray-700 list-disc pl-6">
-            <li>
-              <strong>Smart Script Generation:</strong> Generate YouTube scripts, podcasts, or film scenes tailored to your tone and audience.
-            </li>
-            <li>
-              <strong>AI-Powered Research Assistance:</strong> Summarize, expand, and structure research topics with verified insights.
-            </li>
-            <li>
-              <strong>Dynamic Collaboration:</strong> Edit, refine, and co-create with real-time AI feedback.
-            </li>
-            <li>
-              <strong>Insights & Metrics:</strong> Track your creative growth — scripts generated, topics explored, and more.
-            </li>
-          </ul>
-        </motion.div>
-
-        {/* Vision */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <h2 className="text-3xl font-semibold mb-4">Our Vision</h2>
-          <p className="text-gray-700 leading-relaxed">
-            We envision a world where{" "}
-            <span className="font-semibold">AI creativity feels natural, personal, and human.</span> Script AI isn’t just about automation —
-            it’s about amplifying creativity and giving users more time to focus on what truly matters: their ideas, stories, and impact.
-          </p>
-        </motion.div>
-
-        {/* Our Story */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.25 }}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <h2 className="text-3xl font-semibold mb-4">Our Story</h2>
-          <p className="text-gray-700 leading-relaxed">
-            Script AI began with a simple frustration:{" "}
-            <em>“Why does turning an idea into a finished script take so long?”</em> From that question came a journey to build a platform that
-            bridges creativity and AI — one that adapts to your unique workflow, learns from your preferences, and evolves with your content
-            style. Today, thousands of users rely on Script AI to brainstorm, draft, and polish their ideas — all powered by next-generation AI.
-          </p>
-        </motion.div>
-
-        {/* Core Values */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <h2 className="text-3xl font-semibold mb-4">Our Core Values</h2>
-          <ul className="space-y-3 text-gray-700 list-disc pl-6">
-            <li>
-              <strong>Creativity:</strong> Empower imagination through intelligent tools.
-            </li>
-            <li>
-              <strong>Transparency:</strong> Build trust through ethical AI and clear results.
-            </li>
-            <li>
-              <strong>Simplicity:</strong> Make advanced technology easy and accessible to everyone.
-            </li>
-            <li>
-              <strong>Growth:</strong> Evolve with our users’ needs and feedback.
-            </li>
-          </ul>
-        </motion.div>
-
-        {/* Join Us */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-          className="max-w-3xl mx-auto text-center"
-        >
-          <h2 className="text-3xl font-semibold mb-4">Join Us</h2>
-          <p className="text-gray-700 leading-relaxed mb-6">
-            We’re just getting started. <span className="font-semibold">Script AI</span> is growing fast —
-            and we’re always looking for new ways to make creative AI smarter, faster,
-            and more collaborative.
-          </p>
-          <p className="text-lg font-medium text-indigo-600 mb-8">
-            Create smarter. Research faster. Write better — with Script AI.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="https://github.com/scriptaiapp/scriptai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-gray-900 text-white px-6 py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors duration-200"
-            >
-              🌐 View Our Open Source Codebase
-            </a>
-            <a
-              href="https://discord.gg/k9sZcq2gNG"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-indigo-500 transition-colors duration-200"
-            >
-              💬 Join Our Discord Community
-            </a>
+    <div className="flex flex-col min-h-screen">
+      <LandingPageNavbar />
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="relative w-full min-h-[100vh] flex items-center justify-center bg-gradient-to-b from-white to-slate-50 overflow-hidden pt-24">
+          <div aria-hidden="true" className="absolute inset-0 -z-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[50rem] bg-purple-100/40 rounded-full blur-3xl" />
+            <SparklesCore
+              background="transparent"
+              minSize={0.2}
+              maxSize={0.8}
+              className="absolute inset-0 w-full h-full z-0"
+              particleColor="#a855f7"
+              particleDensity={35}
+            />
           </div>
-        </motion.div>
-      </section>
-      <div className="my-4" />
+          <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-4 tracking-tight">
+                An AI That Learns{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
+                  Your Voice
+                </span>
+              </h1>
+              <h2 className="text-xl md:text-2xl text-slate-600 mb-8">
+                Not just another generic tool, a content partner trained on you.
+              </h2>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+            >
+              <TextGenerateEffect
+                words="Creator AI trains on your past videos, learns your tone, style, and language, then generates scripts, thumbnails, and subtitles that actually sound like you. Not generic. Personal."
+                className="!text-slate-500 max-w-2xl mx-auto"
+              />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* UVP */}
+        <section className="py-24 bg-white overflow-hidden">
+          <div className="container max-w-4xl mx-auto px-6 mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+                Personalization Is Our Core
+              </h2>
+              <p className="text-lg text-slate-600 leading-relaxed">
+                Every creator has a unique voice. Generic AI tools ignore that — Creator AI trains a custom AI
+                on your past videos, learning your tone, vocabulary, pacing, and style. Every output is built from{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 font-bold">
+                  your
+                </span>{" "}
+                creative fingerprint.
+              </p>
+            </motion.div>
+          </div>
+
+          <InfiniteMovingCards
+            items={[
+              { quote: "Generic AI gives everyone the same script. Creator AI gives you YOUR script — in your voice, your style, your words.", name: "Personalized Scripts", title: "Trained on your past videos" },
+              { quote: "Upload 3–5 videos and the AI learns your tone, pacing, and vocabulary. Every output sounds authentically you.", name: "AI That Learns You", title: "Custom model per creator" },
+              { quote: "Thumbnails that match your visual identity, not a one-size-fits-all template from a generic tool.", name: "Your Thumbnail Style", title: "Consistent brand identity" },
+              { quote: "Subtitles and dubbed audio in multiple languages — all preserving your natural voice through generative cloning.", name: "Your Voice, Any Language", title: "Global reach, personal touch" },
+              { quote: "From topic research to final script — every step is personalized to your channel's niche, audience, and history.", name: "End-to-End Personalization", title: "Not just output — the entire workflow" },
+            ]}
+            direction="left"
+            speed="slow"
+            pauseOnHover
+            className="mx-auto"
+          />
+          <div className="mt-6">
+            <InfiniteMovingCards
+              items={[
+                { quote: "Other tools treat every creator the same. Creator AI evolves with your channel — the more you use it, the better it gets.", name: "Adaptive Intelligence", title: "AI that grows with you" },
+                { quote: "Course modules structured to your teaching style. Playlists organized the way your audience expects.", name: "Educator-Friendly", title: "Personalized course creation" },
+                { quote: "2–5 hours of scripting reduced to minutes — without losing the authentic voice your audience subscribed for.", name: "Hours Saved, Voice Kept", title: "Speed without compromise" },
+                { quote: "Your referral credits, your workflow, your creative fingerprint — everything in Creator AI revolves around you.", name: "Built Around You", title: "Every feature, personalized" },
+              ]}
+              direction="right"
+              speed="slow"
+              pauseOnHover
+              className="mx-auto"
+            />
+          </div>
+        </section>
+
+        {/* Why Creator AI */}
+        <section className="py-24 bg-slate-50">
+          <div className="container max-w-6xl mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                Why Personalization Changes Everything
+              </h2>
+              <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+                When your AI actually understands you, content creation stops being a grind
+                and starts feeling like a creative superpower.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {benefits.map((benefit, i) => (
+                <motion.div
+                  key={benefit.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${benefit.gradient} flex items-center justify-center mb-4`}>
+                    <benefit.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-800 mb-2">{benefit.title}</h3>
+                  <p className="text-slate-600 leading-relaxed">{benefit.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Target Audience */}
+        <section className="py-24 bg-white">
+          <div className="container max-w-4xl mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                Built For Creators Like You
+              </h2>
+              <p className="text-lg text-slate-600">
+                YouTube UGC content creators — solo or part of small to mid-sized teams.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-wrap justify-center gap-3"
+            >
+              {niches.map((niche) => (
+                <span
+                  key={niche}
+                  className="px-4 py-2 rounded-full bg-purple-50 text-purple-700 text-sm font-medium border border-purple-100 hover:bg-purple-100 transition-colors"
+                >
+                  {niche}
+                </span>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section className="py-24 bg-slate-50">
+          <div className="container px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                Every Feature, Personalized
+              </h2>
+              <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+                Scripts, thumbnails, subtitles, dubbing — each powered by an AI model trained on your content, not generic templates.
+              </p>
+            </motion.div>
+
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              transition={{ staggerChildren: 0.1 }}
+            >
+              {features.map((feature) => {
+                const Icon = feature.icon
+                return (
+                  <motion.div
+                    key={feature.title}
+                    variants={{
+                      hidden: { opacity: 0, y: 30 },
+                      show: { opacity: 1, y: 0 },
+                    }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  >
+                    <FeatureCard
+                      title={feature.title}
+                      icon={<Icon className="h-6 w-6 text-slate-500" />}
+                      description={feature.description}
+                    />
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Coming Soon */}
+        <section className="py-24 bg-white">
+          <div className="container max-w-5xl mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                What&apos;s Coming Next
+              </h2>
+              <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+                We&apos;re just getting started. Here&apos;s a glimpse of what&apos;s on the roadmap.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {futureFeatures.map((feature, i) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="flex items-start gap-4 p-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 hover:border-purple-300 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <feature.icon className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800 mb-1">{feature.title}</h3>
+                    <p className="text-sm text-slate-600">{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
       <Footer />
     </div>
   )
