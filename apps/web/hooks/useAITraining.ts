@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSupabase } from "@/components/supabase-provider"
 import { toast } from "sonner"
 import { connectYoutubeChannel } from "@/lib/connectYT"
+import { api, ApiClientError } from "@/lib/api-client"
 
-// The main data structure for a video
 type Video = {
   id: number;
   url: string;
@@ -16,18 +16,40 @@ type Video = {
 };
 
 const initialVideos: Video[] = [
-  { id: 1, url: "", status: 'empty', error: "" },
-  { id: 2, url: "", status: 'empty', error: "" },
-  { id: 3, url: "", status: 'empty', error: "" },
+  { id: 1, url: "", status: 'empty' },
+  { id: 2, url: "", status: 'empty' },
+  { id: 3, url: "", status: 'empty' },
 ];
 
+interface TrainAiResponse {
+  message: string;
+  jobId: string;
+}
+
+interface JobEvent {
+  state: 'waiting' | 'active' | 'completed' | 'failed';
+  progress: number;
+  message: string;
+  logs?: string[];
+  error?: string;
+  finished: boolean;
+}
+
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
 export function useAITraining() {
-  const { profile, user, supabase, profileLoading: pageLoading, fetchUserProfile } = useSupabase()
+  const { profile, user, session, supabase, profileLoading: pageLoading, fetchUserProfile } = useSupabase()
 
   const [videos, setVideos] = useState<Video[]>(initialVideos);
   const [uploading, setUploading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [isConnectingYoutube, setIsConnectingYoutube] = useState(false);
+
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isTraining, setIsTraining] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
 
@@ -60,8 +82,8 @@ export function useAITraining() {
 
     if (!youtubeRegex.test(video.url)) {
       video.status = 'error';
-      setVideos([...videos]);
       video.error = "Invalid YouTube URL.";
+      setVideos([...videos]);
       return;
     }
 
@@ -100,7 +122,7 @@ export function useAITraining() {
     }
 
     if (filledVideos.some((video) => !youtubeRegex.test(video.url))) {
-      toast.error("Please provide valid YouTube video URLs.");
+      toast.error("Please provide valid YouTube video or Shorts URLs.");
       return false;
     }
     return true;
@@ -108,37 +130,140 @@ export function useAITraining() {
 
   const handleStartTraining = async () => {
     if (!validateYouTubeUrls()) return;
+
     setUploading(true);
+    setIsTraining(true);
+    setProgress(0);
+    setStatusMessage("Queuing your training job...");
+
     try {
       const validUrls = videos
         .filter((video) => video.url.trim() !== "")
         .map((video) => video.url);
 
-      const response = await fetch("/api/train-ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id, videoUrls: validUrls, isRetraining: profile?.ai_trained }),
+      const payload = {
+        videoUrls: validUrls,
+        isRetraining: profile?.ai_trained ?? false,
+      };
+
+      const { jobId } = await api.post<TrainAiResponse>('/api/v1/train-ai', payload, {
+        requireAuth: true,
+        accessToken: session?.access_token,
       });
 
-      if (!response.ok) throw new Error((await response.json()).error || "Failed to train AI");
-      await fetchUserProfile(user?.id || "");
-
-      toast.success(profile?.ai_trained ? "AI Re-training Complete!" : "AI Training Complete!");
-      setShowModal(true);
+      setJobId(jobId);
+      toast.success("Training started! Analyzing your videos...");
     } catch (error: any) {
-      toast.error("Error training AI", { description: error.message });
-    } finally {
+      let message = "Failed to start training";
+      if (error instanceof ApiClientError) {
+        message = error.message;
+        if (error.statusCode === 401) message = "Please sign in again.";
+      }
+
+      toast.error("Training Failed to Start", { description: message });
+      setIsTraining(false);
       setUploading(false);
-      setVideos(videos.map(video => ({
-        ...video,
-        url: "",
-        status: 'empty',
-        error: "",
-        title: undefined,
-        thumbnail: undefined,
-      })));
+      setProgress(0);
+      setStatusMessage("");
     }
   };
+
+  // Polling for real-time updates
+  useEffect(() => {
+    if (!jobId) return;
+
+    const eventSource = new EventSource(
+      `${backendUrl}/api/v1/train-ai/status/${jobId}`
+    );
+
+    eventSourceRef.current = eventSource;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const response: JobEvent = JSON.parse(event.data);
+
+        console.log("response", response);
+
+        console.log("progress", response.progress);
+
+        console.log(progress);
+
+        setProgress(response.progress);
+
+        // Dynamic status based on state/progress
+        let currentMessage = response.message;
+        if (response.state === "waiting" && response.progress === 0) {
+          currentMessage = "Preparing your training job...";
+        } else if (response.progress > 0 && response.progress < 30) {
+          currentMessage = "Analyzing your videos...";
+        } else if (response.progress >= 30 && response.progress < 70) {
+          currentMessage = "Processing content and training AI...";
+        } else if (response.progress >= 70 && response.progress < 100) {
+          currentMessage = "Finalizing your AI model...";
+        }
+        setStatusMessage(currentMessage);
+
+        if (response.finished) {
+          eventSource.close();
+          eventSourceRef.current = null;
+
+          if (response.state === "completed") {
+            toast.success("AI Training Complete! 🎉", { description: response.message });
+            setShowModal(true);
+            fetchUserProfile(user?.id || "");
+          } else if (response.state === "failed") {
+            let errorMessage = response.error || response.message || "Training failed";
+            try {
+              const parsedError = JSON.parse(errorMessage);
+              errorMessage = parsedError.error?.message || parsedError.message || errorMessage;
+            } catch { }
+            toast.error("Training Failed", { description: errorMessage });
+          }
+
+          // Reset state
+          setIsTraining(false);
+          setUploading(false);
+          setJobId(null);
+          setProgress(0);
+        }
+      } catch (error) {
+        console.error('Error parsing SSE message:', error);
+        toast.error("Training Status Error", { description: "Failed to parse status update" });
+      }
+    };
+
+    const handleError = (event: Event) => {
+      console.error('SSE connection error:', event);
+      eventSource.close();
+      eventSourceRef.current = null;
+
+      let message = "Lost connection to training updates";
+      toast.error("Training Status Error", { description: message });
+
+      setIsTraining(false);
+      setUploading(false);
+      setJobId(null);
+      setProgress(0);
+    };
+
+    eventSource.addEventListener('message', handleMessage);
+    eventSource.addEventListener('error', handleError);
+
+    // Cleanup function
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, [jobId]);
+
+  // Reset form after training ends
+  useEffect(() => {
+    if (!isTraining && !uploading) {
+      setVideos(initialVideos.map(v => ({ ...v, url: "", status: 'empty' })));
+    }
+  }, [isTraining, uploading]);
 
   const handleConnectYoutube = () => {
     connectYoutubeChannel({ supabase, user, setIsConnectingYoutube });
@@ -151,6 +276,9 @@ export function useAITraining() {
     uploading,
     showModal,
     isConnectingYoutube,
+    isTraining,
+    progress,
+    statusMessage,
     setShowModal,
     handleAddVideoUrl,
     handleRemoveVideoUrl,

@@ -1,12 +1,12 @@
 
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
 import { parseScriptResponse } from "@/lib/parseResponse";
 
 import fs from 'fs/promises';
-import path from 'path';    
-import os from 'os';   
+import path from 'path';
+import os from 'os';
 
 type Part = { text: string } | { fileData: { fileUri: string; mimeType: string } };
 
@@ -15,8 +15,8 @@ interface ScriptRequest {
   context?: string;
   tone?: string;
   includeStorytelling: boolean;
-  includeTimestamps:boolean;
-  duration:string;
+  includeTimestamps: boolean;
+  duration: string;
   references?: string;
   language: string;
   personalized: boolean;
@@ -56,8 +56,8 @@ interface ScriptRecord {
   context?: string;
   tone?: string;
   include_storytelling: boolean;
-  duration:string
-  include_timestamps:boolean
+  duration: string
+  include_timestamps: boolean
   reference_links?: string;
   language: string;
   created_at: string;
@@ -66,11 +66,11 @@ interface ScriptRecord {
 
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
 
-     const formData = await request.formData();
+    const formData = await request.formData();
 
     // Strings
     const prompt = formData.get("prompt") as string;
@@ -260,7 +260,7 @@ Return the output as valid JSON with no additional text, comments, markdown or f
     }
 
     // Save script to database
-  
+
     const { data, error: insertError } = await supabase
       .from('scripts')
       .insert({
@@ -280,18 +280,18 @@ Return the output as valid JSON with no additional text, comments, markdown or f
       } as ScriptRecord)
       .select()
       .single();
-      
-      if (insertError) {
-        console.error('Error saving script:', insertError);
-        return NextResponse.json({ error: 'Failed to save script' }, { status: 500 });
-      }
 
-      // Return the generated script
-      return NextResponse.json({
-        id: (data as ScriptRecord).id,
-        title: response.title,
-        script: response.script
-      });
+    if (insertError) {
+      console.error('Error saving script:', insertError);
+      return NextResponse.json({ error: 'Failed to save script' }, { status: 500 });
+    }
+
+    // Return the generated script
+    return NextResponse.json({
+      id: (data as ScriptRecord).id,
+      title: response.title,
+      script: response.script
+    });
   } catch (error: unknown) {
     console.error('Error in generate-script:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

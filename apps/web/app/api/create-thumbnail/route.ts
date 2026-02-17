@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { createClient } from "@/lib/supabase/server"
+import { getSupabaseServer } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
     // Check if user has enough credits
     const cookieStore = cookies()
-    const supabase = await createClient()
+    const supabase = await getSupabaseServer()
 
     const {
       data: { session },

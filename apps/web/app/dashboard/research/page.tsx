@@ -157,7 +157,7 @@ export default function Topics() {
             My Topics
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Manage and explore all your researched topics in one place.
+            Manage and explore all your researched ideas in one place.
           </p>
         </div>
         {!showTrainingOverlay && (
@@ -165,7 +165,7 @@ export default function Topics() {
           <Link href="/dashboard/research/new">
             <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all hover:shadow-lg hover:shadow-purple-500/10 dark:hover:shadow-purple-400/10">
               <Plus className="mr-2 h-4 w-4" />
-              New Topic
+              New Idea
             </Button>
           </Link>
         )}
@@ -215,18 +215,18 @@ export default function Topics() {
             {/* Placeholder for illustration */}
             <EmptySvg className="h-32 w-auto mb-6 text-slate-300 dark:text-slate-700" />
             <h3 className="font-semibold text-xl text-slate-800 dark:text-slate-200 mb-2">
-              {searchQuery ? "No topics found" : "Start a New Topic"}
+              {searchQuery ? "No Ideas brainstormed" : "Start brainstorming your first idea!"}
             </h3>
             <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
               {searchQuery
-                ? `We couldn't find any topics matching "${searchQuery}".`
-                : "Your research journey begins here. Create your first topic to get started."}
+                ? `We couldn't find any ideas matching "${searchQuery}".`
+                : "Your research journey begins here. Brainstorm your first idea to get started."}
             </p>
             {!searchQuery && (
               <Link href="/dashboard/research/new">
                 <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create topic
+                  Brainstorm new Idea
                 </Button>
               </Link>
             )}

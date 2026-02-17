@@ -1,4 +1,4 @@
-import type { Config } from 'jest';
+import type { Config } from '@jest/types';
 
 export const config = {
   collectCoverage: true,
@@ -6,4 +6,4 @@ export const config = {
   coverageProvider: 'v8',
   moduleFileExtensions: ['js', 'ts', 'json'],
   testEnvironment: 'jsdom',
-} as const satisfies Config;
+} as const satisfies Config.InitialOptions;

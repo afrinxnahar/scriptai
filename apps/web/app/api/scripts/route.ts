@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { ScriptRecord } from './[id]/route';
 
 
 // GET: Fetch all scripts (limit 10, newest first)
 export async function GET() {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();

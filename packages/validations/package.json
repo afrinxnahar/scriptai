@@ -2,20 +2,40 @@
   "name": "@repo/validation",
   "version": "0.0.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
   "scripts": {
-    "lint": "echo 'No source JavaScript files to lint'",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepare": "tsup",
+    "lint": "echo 'No source JavaScript files to lint'"
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "eslint": "^9.0.0",
-    "typescript": "^5.4.5",
-    "zod": "^3.23.8"
+    "tsup": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "lucide-react": "^0.454.0"
-  }
+    "lucide-react": "^0.454.0",
+    "zod": "^3.23.8"
+  },
+  "files": [
+    "dist"
+  ]
 }

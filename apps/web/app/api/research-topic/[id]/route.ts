@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface ResearchTopicRecord {
@@ -19,8 +19,8 @@ interface ResearchTopicRecord {
 }
 
 // GET: Fetch a single research topic by ID
-export async function GET(request: Request,  context: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient();
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const supabase = await getSupabaseServer();
   const researchId = (await context.params).id;
 
   try {
@@ -48,8 +48,8 @@ export async function GET(request: Request,  context: { params: Promise<{ id: st
 }
 
 // DELETE: Delete a research topic by ID
-export async function DELETE(request: Request,  context: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient();
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const supabase = await getSupabaseServer();
   const researchId = (await context.params).id;
 
   try {

@@ -3,11 +3,8 @@ DROP TABLE IF EXISTS subscriptions;
 DROP TABLE IF EXISTS plans;
 
 
--- Create new plans table
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE plans (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     name TEXT NOT NULL UNIQUE,
     price_monthly NUMERIC NOT NULL CHECK (price_monthly >= 0),
     credits_monthly INTEGER NOT NULL CHECK (credits_monthly >= 0),

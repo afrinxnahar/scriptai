@@ -1,24 +1,24 @@
 import { type EmailOtpType } from '@supabase/supabase-js';
 import { type NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 
 const CREDITS_PER_REFERRAL = 10;
 
 async function sendWelcomeEmail(
-    full_name: string,
-    email: string,
-    user_id: string,
-    resend: Resend
-| null) {
+  full_name: string,
+  email: string,
+  user_id: string,
+  resend: Resend
+    | null) {
   if (!resend) return;
   try {
     await resend.emails.send({
       from: 'Script AI <onboarding@tryscriptai.com>',
       to: email,
       subject: 'Welcome to Script AI!',
-      replyTo: 'support@tryscriptai.com',
+      replyTo: 'no-reply@tryscriptai.com', // support@tryscriptai.com
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px;">
           <h1 style="color: #4F46E5; margin-bottom: 10px;">Welcome aboard, ${full_name}! 🎉</h1>
@@ -56,7 +56,7 @@ async function sendWelcomeEmail(
           </p>
 
           <p style="margin-top: 30px;">Have any questions? Just reply to this email or reach us at 
-            <a href="mailto:support@tryscriptai.com" style="color: #4F46E5; text-decoration: none;">support@tryscriptai.com</a>.
+            <a href="mailto:no-reply@tryscriptai.com" style="color: #4F46E5; text-decoration: none;">no-reply@tryscriptai.com</a>. <!-- support@tryscriptai.com -->
           </p>
 
           <p style="margin-top: 20px;">Cheers,<br/>The Script AI Team</p>
@@ -92,19 +92,19 @@ async function sendAdminNotification(full_name: string, email: string, resend: R
 }
 
 async function updateUserProfile(
-    supabase: any,
-    userId: string,
-    full_name: string,
-    avatar_url: string | null
+  supabase: any,
+  userId: string,
+  full_name: string,
+  avatar_url: string | null
 ) {
   const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name,
-        avatar_url,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
+    .from('profiles')
+    .update({
+      full_name,
+      avatar_url,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
 
   if (error) {
     console.error(' Error updating profile:', error.message);
@@ -114,9 +114,9 @@ async function updateUserProfile(
 }
 
 async function processReferral(
-    referralCode: string,
-    userEmail: string,
-    origin: string
+  referralCode: string,
+  userEmail: string,
+  origin: string
 ) {
   try {
     const response = await fetch(`${origin}/api/track-referral`, {
@@ -143,18 +143,18 @@ async function processReferral(
 
 
 async function completePendingReferral(
-    supabase: any,
-    userEmail: string,
-    userId: string
+  supabase: any,
+  userEmail: string,
+  userId: string
 ) {
   try {
     // Fetch the first pending referral (should only be one)
     const { data: pendingReferral, error: fetchError } = await supabase
-        .from('referrals')
-        .select('id, referrer_id')
-        .eq('status', 'pending')
-        .eq('referred_email', userEmail.toLowerCase())
-        .maybeSingle();
+      .from('referrals')
+      .select('id, referrer_id')
+      .eq('status', 'pending')
+      .eq('referred_email', userEmail.toLowerCase())
+      .maybeSingle();
 
     if (fetchError) {
       console.error(' Error fetching pending referral:', fetchError.message);
@@ -166,30 +166,30 @@ async function completePendingReferral(
       return;
     }
 
-    const{data: profileData} = await supabase
-        .from('profiles')
-        .select('credits')
-        .eq('id', userId)
-        .single();
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('credits')
+      .eq('id', userId)
+      .single();
 
-    if(profileData){
+    if (profileData) {
       await supabase
-          .from('profiles')
-          .update({credits: profileData.credits + CREDITS_PER_REFERRAL})
-          .eq('id', userId)
+        .from('profiles')
+        .update({ credits: profileData.credits + CREDITS_PER_REFERRAL })
+        .eq('id', userId)
     }
 
 
     // Update the referral to completed
     const { error: updateError } = await supabase
-        .from('referrals')
-        .update({
-          referred_user_id: userId,
-          status: 'completed',
-          credits_awarded: CREDITS_PER_REFERRAL,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', pendingReferral.id);
+      .from('referrals')
+      .update({
+        referred_user_id: userId,
+        status: 'completed',
+        credits_awarded: CREDITS_PER_REFERRAL,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', pendingReferral.id);
 
     if (updateError) {
       console.error(' Error completing referral:', updateError.message);
@@ -203,19 +203,19 @@ async function completePendingReferral(
 }
 
 async function sendWelcomeEmailsIfNeeded(
-    supabase: any,
-    userId: string,
-    full_name: string,
-    email: string,
-    resend: Resend,
-    isNewSignup: boolean
+  supabase: any,
+  userId: string,
+  full_name: string,
+  email: string,
+  resend: Resend,
+  isNewSignup: boolean
 ) {
   try {
     const { data: profile } = await supabase
-        .from('profiles')
-        .select('welcome_email_sent')
-        .eq('id', userId)
-        .single();
+      .from('profiles')
+      .select('welcome_email_sent')
+      .eq('id', userId)
+      .single();
 
     if (profile && !profile.welcome_email_sent && isNewSignup) {
       // Send both emails in parallel
@@ -226,12 +226,12 @@ async function sendWelcomeEmailsIfNeeded(
 
       // Mark as sent
       await supabase
-          .from('profiles')
-          .update({
-            welcome_email_sent: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', userId);
+        .from('profiles')
+        .update({
+          welcome_email_sent: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
 
       console.log(` Welcome emails sent and marked for: ${email}`);
     }
@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
     console.error(' RESEND_API_KEY is not configured');
     redirect('/error?message=Server configuration error. Please contact support.');
   }
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const resend = new Resend(process.env.RESEND_API_KEY!);
   // For Google sign-in
   if (code) {
@@ -266,13 +266,13 @@ export async function GET(request: NextRequest) {
 
       const user = data.user;
       const full_name =
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          user.email!;
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email!;
       const avatar_url =
-          user.user_metadata?.avatar_url ||
-          user.user_metadata?.picture ||
-          null;
+        user.user_metadata?.avatar_url ||
+        user.user_metadata?.picture ||
+        null;
 
       console.log(` Google OAuth callback for: ${user.email}`);
 
@@ -290,12 +290,12 @@ export async function GET(request: NextRequest) {
       }
 
       await sendWelcomeEmailsIfNeeded(
-          supabase,
-          user.id,
-          full_name,
-          user.email!,
-          resend,
-          true
+        supabase,
+        user.id,
+        full_name,
+        user.email!,
+        resend,
+        true
       );
 
       console.log(` Google OAuth flow completed for: ${user.email}`);
@@ -336,12 +336,12 @@ export async function GET(request: NextRequest) {
       // Send welcome emails only for new signups (type === 'signup')
       const isNewSignup = type === 'signup';
       await sendWelcomeEmailsIfNeeded(
-          supabase,
-          user.id,
-          full_name,
-          user.email!,
-          resend,
-          isNewSignup
+        supabase,
+        user.id,
+        full_name,
+        user.email!,
+        resend,
+        isNewSignup
       );
 
       console.log(`Email OTP flow completed for: ${user.email}`);

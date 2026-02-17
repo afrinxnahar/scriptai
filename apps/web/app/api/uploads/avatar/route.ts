@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 
 // This function handles UPLOADING a new avatar.
 // It smartly deletes the old one first.
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
     // 1. Authenticate the user
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
 // This function handles DELETING an avatar when the user doesn't upload a new one.
 export async function DELETE(request: Request) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
     // 1. Authenticate the user

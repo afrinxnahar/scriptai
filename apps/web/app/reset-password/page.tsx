@@ -1,230 +1,295 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { z, ZodError } from "zod"
-
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-import { useSupabase } from "@/components/supabase-provider"
-import { AlertCircle, ArrowLeft, CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react"
-import { resetPasswordSchema } from "@repo/validation"
-
-import Link from "next/link"
-import logo from "@/public/dark-logo.png";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { z } from "zod";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { OTPInput } from "@/components/ui/otp-input";
+import { toast } from "sonner";
+import { ArrowLeft, CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { api } from "@/lib/api-client";
+import Link from "next/link";
 import Image from "next/image";
+import logo from "@/public/dark-logo.png";
+import { motion, AnimatePresence } from "motion/react";
 
-type FormData = z.infer<typeof resetPasswordSchema>
-type FormErrors = Partial<Record<keyof FormData, string>>
+const passwordSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine((d) => d.newPassword === d.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
+const stepVariants = {
+  hidden: { opacity: 0, x: 50 },
+  visible: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -50 },
+};
 
-function isZodError(error: unknown): error is z.ZodError {
-  return Boolean(
-    error &&
-    typeof error === 'object' &&
-    'name' in error &&
-    error.name === 'ZodError' &&
-    'errors' in error &&
-    Array.isArray((error as any).errors)
+function ResetPasswordForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") ?? "";
+
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  const verifyOtp = async () => {
+    if (otp.length !== 6) return;
+    setIsVerifyingOtp(true);
+    try {
+      const res = await api.post<{ valid: boolean; message?: string }>("/api/v1/auth/verify-otp", {
+        email: email.toLowerCase().trim(),
+        otp,
+      }, { requireAuth: false });
+
+      if (!res.valid) throw new Error(res.message ?? "Invalid OTP");
+
+      setVerified(true);
+      toast.success("OTP verified! Now set your new password.");
+    } catch (err: any) {
+      toast.error(err.message ?? "Invalid or expired OTP");
+      setOtp("");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!verified) {
+      return verifyOtp();
+    }
+
+    try {
+      passwordSchema.parse({ newPassword, confirmPassword });
+      setIsResettingPassword(true);
+
+      await api.post("/api/v1/auth/reset-password", {
+        email: email.toLowerCase().trim(),
+        otp,
+        newPassword,
+        confirmNewPassword: confirmPassword
+      }, { requireAuth: false });
+
+      setSuccess(true);
+      toast.success("Password reset successfully!");
+      setTimeout(() => router.push("/login"), 3000);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        toast.error(err.errors[0].message);
+      } else {
+        toast.error(err.message ?? "Failed to reset password");
+        setVerified(false);
+        setOtp("");
+      }
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    if (cooldown > 0 || !email) return;
+
+    setIsResendingOtp(true);
+    try {
+      await api.post("/api/v1/auth/forgot-password", { email: email.toLowerCase().trim() }, { requireAuth: false });
+      setCooldown(60);
+      const timer = setInterval(() => {
+        setCooldown((c) => {
+          if (c <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+      toast.success("New OTP sent to your email!");
+    } catch {
+      toast.error("Failed to resend OTP");
+    } finally {
+      setIsResendingOtp(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="py-12">
+            <CheckCircle className="mx-auto h-16 w-16 text-green-600 mb-4" />
+            <p className="text-xl font-semibold">Password Reset Successful</p>
+            <p className="text-muted-foreground mt-2">Redirecting to login...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+      <Card className="w-full max-w-md overflow-hidden">
+        <CardHeader className="text-center space-y-4">
+          <Link href="/" className="w-full mx-auto flex justify-center items-center">
+            <Image src={logo} alt="Logo" width={100} height={100} />
+          </Link>
+          <CardTitle className="text-2xl">Reset Password</CardTitle>
+          <CardDescription>
+            {verified ? "Set your new password" : "Enter the 6-digit code sent to your email"}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={email} disabled className="bg-muted" />
+            </div>
+
+            <AnimatePresence mode="wait">
+              {!verified ? (
+                <motion.div
+                  key="otp-step"
+                  variants={stepVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-4">
+                    <OTPInput
+                      value={otp}
+                      onChange={setOtp}
+                      length={6}
+                      disabled={isVerifyingOtp}
+                      onComplete={verifyOtp}
+                    />
+
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={resendOtp}
+                      disabled={isResendingOtp || cooldown > 0}
+                      className="mx-auto block"
+                    >
+                      {isResendingOtp ? (
+                        <>Sending...</>
+                      ) : cooldown > 0 ? (
+                        `Resend in ${cooldown}s`
+                      ) : (
+                        "Resend OTP"
+                      )}
+                    </Button>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isVerifyingOtp || otp.length !== 6}
+                  >
+                    {isVerifyingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Verify OTP
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="password-step"
+                  variants={stepVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>New Password</Label>
+                      <div className="relative">
+                        <Input
+                          type={showPass ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                          placeholder="••••••••"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-0"
+                          onClick={() => setShowPass(!showPass)}
+                        >
+                          {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Confirm Password</Label>
+                      <Input
+                        type={showPass ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isResettingPassword}
+                  >
+                    {isResettingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Reset Password
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </form>
+
+          <div className="mt-6 text-center">
+            <Button variant="ghost" asChild>
+              <Link href="/login">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Login
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
 export default function ResetPasswordPage() {
-  const router = useRouter()
-  const { supabase } = useSupabase()
-  const [formData, setFormData] = useState<FormData>({ newPassword: "", confirmNewPassword: "" })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [canUpdatePassword, setCanUpdatePassword] = useState(false)
-  const [visible, setVisible] = useState(false)
-
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session)
-      if (event === "SIGNED_IN") {
-        setCanUpdatePassword(true)
-      } else if (event === "PASSWORD_RECOVERY") {
-        setCanUpdatePassword(true)
-      }
-    })
-
-    const timer = setTimeout(() => {
-      if (!canUpdatePassword) {
-        toast.error("Invalid or Expired Link", {
-          description: "The password reset link is invalid or has expired. Please request a new one.",
-        })
-      }
-    }, 5000) // 5-second timeout
-
-    // Cleanup the listener and the timer on component unmount.
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timer)
-    }
-    // The dependency array is updated to reflect the variables used inside.
-  }, [supabase, canUpdatePassword])
-
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        router.push("/login")
-      }, 3000)
-      return () => clearTimeout(timer) // Cleanup the timer on component unmount
-    }
-  }, [success, router])
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target
-    setFormData(prev => ({ ...prev, [id]: value }))
-  }
-
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrors({}) // Clear previous errors
-
-    try {
-      resetPasswordSchema.parse(formData)
-      setLoading(true)
-
-      const { error } = await supabase.auth.updateUser({ password: formData.newPassword })
-      if (error) throw error
-
-      setSuccess(true)
-      toast.success("Password Updated!", {
-        description: "Your password has been successfully reset.",
-      })
-    } catch (error: any) {
-      if (isZodError(error)) {
-        const newErrors: FormErrors = {}
-        error.errors.forEach(err => {
-          if (err.path[0]) {
-            newErrors[err.path[0] as keyof FormData] = err.message
-          }
-        })
-        setErrors(newErrors)
-      } else {
-        toast.error("Password Update Failed", {
-          description: error.message,
-        })
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // --- The JSX remains unchanged as it's already well-structured. ---
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <div className="mb-8">
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="py-12 text-center">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
       </div>
-      <Card className="w-full max-w-md rounded-2xl shadow-lg">
-        <CardHeader className="text-center">
-          <div className="mb-8 justify-center gap-4 flex">
-            <Link href="/">
-              <Image src={logo} alt="Script AI" width={80} height={80} />
-            </Link>
-          </div>
-          <CardTitle className="text-2xl font-bold">Reset Your Password</CardTitle>
-          <CardDescription>Create a new, strong password for your account.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!canUpdatePassword && !success && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded-md flex items-start gap-2 text-sm">
-              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-              <span>
-                Verifying your reset link. If this message persists, the link may be invalid or expired.
-              </span>
-            </div>
-          )}
-
-          {success ? (
-            <div className="flex flex-col items-center space-y-4 rounded-lg bg-green-50 p-6 text-center dark:bg-green-900/20">
-              <div className="rounded-full bg-green-100 p-3 dark:bg-green-800/30">
-                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-medium text-green-900 dark:text-green-200">Password Reset Successful!</h3>
-                <p className="text-sm text-green-700 dark:text-green-300">You will be redirected to the login page shortly.</p>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handlePasswordUpdate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    type={visible ? "text" : "password"}
-                    placeholder="Enter new password"
-                    value={formData.newPassword}
-                    onChange={handleInputChange}
-                    disabled={loading || !canUpdatePassword}
-                    className={errors.newPassword ? "border-destructive" : ""}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setVisible(!visible)}
-                  >
-                    {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmNewPassword"
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={formData.confirmNewPassword}
-                  onChange={handleInputChange}
-                  disabled={loading || !canUpdatePassword}
-                  className={errors.confirmNewPassword ? "border-destructive" : ""}
-                  required
-                />
-                {errors.confirmNewPassword && (
-                  <p className="text-sm text-destructive">{errors.confirmNewPassword}</p>
-                )}
-              </div>
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-semibold  bg-slate-900 text-white hover:bg-slate-800 shadow-md"
-                disabled={loading || !canUpdatePassword}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  "Update Password"
-                )}
-              </Button>
-            </form>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button variant="ghost" className="w-full text-slate-600" asChild>
-            <Link href="/login">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Login
-            </Link>
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
-  )
+    }>
+      <ResetPasswordForm />
+    </Suspense>
+  );
 }

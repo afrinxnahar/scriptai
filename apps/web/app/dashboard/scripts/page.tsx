@@ -34,11 +34,13 @@ const emptyStateVariants = {
 }
 
 export default function Scripts() {
-    const { profile, profileLoading } = useSupabase()
+    const { profile, profileLoading, session } = useSupabase()
     const [scripts, setScripts] = useState<Script[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [scriptToDelete, setScriptToDelete] = useState<string | null>(null)
+
+    console.log("User session:", session)
 
     useEffect(() => {
         const fetchScripts = async () => {

@@ -1,4 +1,4 @@
-import type { Config } from 'jest';
+import type { Config } from '@jest/types';
 import { config as baseConfig } from './base';
 
 export const config = {
@@ -11,4 +11,4 @@ export const config = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
-} as const satisfies Config;
+} as const satisfies Config.InitialOptions;

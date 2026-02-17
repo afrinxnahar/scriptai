@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { PDFDocument, rgb, StandardFonts, PDFFont, PDFPage } from 'pdf-lib';
 import { marked, Tokens } from 'marked';
@@ -72,70 +72,70 @@ function drawMarkdownTokens(
       }
     }
   };
-  
-const processTokens = (innerTokens: Token[], activeFont: PDFFont = fonts.regular) => {
-  for (const token of innerTokens) {
-    switch (token.type) {
-      case 'paragraph':
-        processTokens(token.tokens || [], activeFont);
-        flushLine();
-        break;
 
-      case 'strong':
-        processTokens(token.tokens || [], fonts.bold);
-        break;
-
-      case 'em':
-        processTokens(token.tokens || [], fonts.italic);
-        break;
-
-      case 'link':
-        processTokens(token.tokens || [], activeFont);
-        break;
-
-      case 'list':
-        token.items.forEach((item: any, i: number) => {
-          const bullet = token.ordered ? `${i + 1}. ` : '• ';
-          currentLine.push({ text: bullet, font: fonts.bold });
-          currentLineWidth += fonts.bold.widthOfTextAtSize(bullet, baseSize);
-
-          processTokens(item.tokens || [], activeFont);
+  const processTokens = (innerTokens: Token[], activeFont: PDFFont = fonts.regular) => {
+    for (const token of innerTokens) {
+      switch (token.type) {
+        case 'paragraph':
+          processTokens(token.tokens || [], activeFont);
           flushLine();
-        });
-        break;
+          break;
 
-      case 'list_item':
-        processTokens(token.tokens || [], activeFont);
-        flushLine();
-        break;
+        case 'strong':
+          processTokens(token.tokens || [], fonts.bold);
+          break;
 
-      case 'text':
-      case 'codespan':
-        if (token.tokens && token.tokens.length > 0) {
-          processTokens(token.tokens, activeFont);
-        } else {
-          const words = token.text.split(/(\s+)/);
-          for (const word of words) {
-            if (!word) continue;
+        case 'em':
+          processTokens(token.tokens || [], fonts.italic);
+          break;
 
-            const wordWidth = activeFont.widthOfTextAtSize(word, baseSize);
-            if (currentLineWidth + wordWidth > maxWidth) {
-              flushLine();
+        case 'link':
+          processTokens(token.tokens || [], activeFont);
+          break;
+
+        case 'list':
+          token.items.forEach((item: any, i: number) => {
+            const bullet = token.ordered ? `${i + 1}. ` : '• ';
+            currentLine.push({ text: bullet, font: fonts.bold });
+            currentLineWidth += fonts.bold.widthOfTextAtSize(bullet, baseSize);
+
+            processTokens(item.tokens || [], activeFont);
+            flushLine();
+          });
+          break;
+
+        case 'list_item':
+          processTokens(token.tokens || [], activeFont);
+          flushLine();
+          break;
+
+        case 'text':
+        case 'codespan':
+          if (token.tokens && token.tokens.length > 0) {
+            processTokens(token.tokens, activeFont);
+          } else {
+            const words = token.text.split(/(\s+)/);
+            for (const word of words) {
+              if (!word) continue;
+
+              const wordWidth = activeFont.widthOfTextAtSize(word, baseSize);
+              if (currentLineWidth + wordWidth > maxWidth) {
+                flushLine();
+              }
+
+              const lastSegment = currentLine[currentLine.length - 1];
+              if (lastSegment && lastSegment.font === activeFont) {
+                lastSegment.text += word;
+              } else {
+                currentLine.push({ text: word, font: activeFont });
+              }
+              currentLineWidth += wordWidth;
             }
-
-            const lastSegment = currentLine[currentLine.length - 1];
-            if (lastSegment && lastSegment.font === activeFont) {
-              lastSegment.text += word;
-            } else {
-              currentLine.push({ text: word, font: activeFont });
-            }
-            currentLineWidth += wordWidth;
           }
-        }
-        break;
+          break;
+      }
     }
-  }
-};
+  };
 
 
   processTokens(tokens);
@@ -218,9 +218,9 @@ export const createScriptPdf = async (script: ScriptRecord): Promise<Uint8Array>
         page = paraRes.page;
         currentY = paraRes.y - 5;
         break;
-      
+
       case 'blockquote':
-         const quoteRes = drawMarkdownTokens(token.tokens || [], {
+        const quoteRes = drawMarkdownTokens(token.tokens || [], {
           doc: pdfDoc, page, fonts,
           x: margins.left + 20, y: currentY,
           maxWidth: contentWidth - 20, lineHeight: 16,
@@ -237,10 +237,10 @@ export const createScriptPdf = async (script: ScriptRecord): Promise<Uint8Array>
             currentY = height - margins.top;
           }
           page.drawText('•', {
-             x: margins.left + 10,
-             y: currentY,
-             font: fonts.regular,
-             size: 12,
+            x: margins.left + 10,
+            y: currentY,
+            font: fonts.regular,
+            size: 12,
           });
 
           const itemRes = drawMarkdownTokens(item.tokens || [], {
@@ -269,7 +269,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const scriptId = (await context.params).id;
 
   try {

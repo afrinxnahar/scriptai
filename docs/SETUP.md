@@ -99,7 +99,7 @@ nano apps/api/.env
 
 #### Optional Services
 - **OpenAI**: For additional AI features
-- **ElevenLabs**: For voice cloning
+- **Murf.ai**: For video/audio dubbing (requires MURF_API_KEY)
 - **Stripe**: For payment processing
 
 ## 🏃‍♂️ Running the Application

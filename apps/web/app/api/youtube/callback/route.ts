@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import axios, { AxiosError } from 'axios';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const redirectUrl = new URL('/dashboard', request.url);
 
   try {

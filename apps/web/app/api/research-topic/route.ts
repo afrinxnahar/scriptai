@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
@@ -56,7 +56,7 @@ interface StyleData {
 
 // GET: Fetch recent research topics for the user
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
 // POST: Create a new research topic
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
     const body: ResearchRequest = await request.json();

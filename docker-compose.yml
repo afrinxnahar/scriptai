@@ -1,0 +1,32 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: redis-server --requirepass abcd1234
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  train-ai-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: train-ai-worker
+    env_file:
+      - packages/train-ai-worker/.env
+
+  yt-dlp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yt-dlp
+   
+
+volumes:
+  redis_data:

@@ -1,249 +1,186 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Loader2, Upload, Play, Download, Clock } from "lucide-react";
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { useSupabase } from "@/components/supabase-provider"
+import { Plus, Search } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
+import { ContentCard } from "@/components/dashboard/common/ContentCard"
+import ContentCardSkeleton from "@/components/dashboard/common/skeleton/ContentCardSkeleton"
+import { EmptySvg } from "@/components/dashboard/common/EmptySvg"
+import { getDubbings, deleteDubbing, DubbingProject } from "@/lib/api/getDubbings"
+import { supportedLanguages } from "@repo/validation"
 
-interface DubbedResult {
-  projectId: string;
-  dubbedUrl: string;
-  targetLanguage: string;
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.07,
+    },
+  },
 }
 
-export default function NewDubbing() {
-  const router = useRouter();
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [dubbedResult, setDubbedResult] = useState<DubbedResult | null>(null);
-  const isComingSoon = true; // Toggle this to false when feature is released
+const emptyStateVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.4 },
+  },
+}
 
-  // Supported languages from ElevenLabs Dubbing API
-  const supportedLanguages = [
-    { value: "en", label: "English" },
-    { value: "es", label: "Spanish" },
-    { value: "fr", label: "French" },
-    { value: "de", label: "German" },
-    { value: "it", label: "Italian" },
-    { value: "hi", label: "Hindi" },
-    { value: "zh", label: "Chinese" },
-    { value: "ja", label: "Japanese" },
-    { value: "ko", label: "Korean" },
-    { value: "pt", label: "Portuguese" },
-    { value: "pl", label: "Polish" },
-    { value: "ru", label: "Russian" },
-    { value: "nl", label: "Dutch" },
-    { value: "tr", label: "Turkish" },
-    { value: "sv", label: "Swedish" },
-    { value: "id", label: "Indonesian" },
-    { value: "fil", label: "Filipino" },
-    { value: "uk", label: "Ukrainian" },
-    { value: "el", label: "Greek" },
-    { value: "cs", label: "Czech" },
-    { value: "fi", label: "Finnish" },
-    { value: "ro", label: "Romanian" },
-    { value: "da", label: "Danish" },
-    { value: "bg", label: "Bulgarian" },
-    { value: "ms", label: "Malay" },
-    { value: "sk", label: "Slovak" },
-    { value: "hr", label: "Croatian" },
-    { value: "ar", label: "Arabic" },
-    { value: "ta", label: "Tamil" },
-  ];
+function getLanguageLabel(code: string): string {
+  return supportedLanguages.find((l) => l.value === code)?.label ?? code
+}
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isComingSoon) return; // Prevent interaction when coming soon
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 500 * 1024 * 1024) { // 500MB limit
-        toast.error("File too large", {
-          description: "Please upload an audio file smaller than 500MB.",
-        });
-        return;
-      }
-      setAudioFile(file);
-    }
-  };
+function formatTitle(project: DubbingProject): string {
+  if (project.media_name) return project.media_name
+  const lang = getLanguageLabel(project.target_language)
+  const type = project.is_video ? "Video" : "Audio"
+  return `${type} dubbed to ${lang}`
+}
 
-  const handleDubAudio = async () => {
-    if (isComingSoon) return; // Prevent interaction when coming soon
-    if (!audioFile) {
-      toast.error("No audio file", {
-        description: "Please upload an audio file to dub.",
-      });
-      return;
-    }
-    if (!targetLanguage) {
-      toast.error("No language selected", {
-        description: "Please select a target language.",
-      });
-      return;
+export default function DubbingList() {
+  const { session } = useSupabase()
+  const [dubbings, setDubbings] = useState<DubbingProject[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [dubbingToDelete, setDubbingToDelete] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchDubbings = async () => {
+      setLoading(true)
+      const data = await getDubbings(session?.access_token)
+      setDubbings(data)
+      setLoading(false)
     }
 
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("audio", audioFile);
-      formData.append("targetLanguage", targetLanguage);
-
-      const response = await fetch("/api/dubbing", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to dub audio");
-      }
-
-      const data = await response.json();
-      setDubbedResult({
-        projectId: data.projectId,
-        dubbedUrl: data.dubbedUrl,
-        targetLanguage,
-      });
-
-      toast.success("Dubbing complete!", {
-        description: `Your audio has been dubbed into ${supportedLanguages.find(lang => lang.value === targetLanguage)?.label}.`,
-      });
-    } catch (error: any) {
-      toast.error("Error dubbing audio", {
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
+    if (session?.access_token) {
+      fetchDubbings()
     }
-  };
+  }, [session?.access_token])
+
+  const handleDeleteDubbing = async () => {
+    if (!dubbingToDelete) return
+
+    const success = await deleteDubbing(dubbingToDelete, session?.access_token)
+
+    if (success) {
+      setDubbings(dubbings.filter((d) => d.project_id !== dubbingToDelete))
+      toast.success("Dubbing deleted", {
+        description: "Your dubbed media has been deleted successfully.",
+      })
+    } else {
+      toast.error("Error deleting dubbing", {
+        description: "Could not delete the dubbed media. Please try again.",
+      })
+    }
+    setDubbingToDelete(null)
+  }
+
+  if (loading) {
+    return <ContentCardSkeleton />
+  }
+
+  const filteredDubbings = dubbings.filter((d) => {
+    const query = searchQuery.toLowerCase()
+    const title = formatTitle(d).toLowerCase()
+    return title.includes(query) || d.target_language.toLowerCase().includes(query) || (d.media_name?.toLowerCase().includes(query) ?? false)
+  })
 
   return (
-    <div className="container py-8 relative">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">AI Audio Dubbing</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Upload an audio file and dub it into another language with AI, preserving tone and style.
-        </p>
+    <motion.div
+      className="container py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">My Dubbings</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
+            Manage all your dubbed audio and video files
+          </p>
+        </div>
+        <Link href="/dashboard/dubbing/new">
+          <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all hover:shadow-lg hover:shadow-purple-500/10 dark:hover:shadow-purple-400/10">
+            <Plus className="mr-2 h-4 w-4" />
+            New Dubbing
+          </Button>
+        </Link>
       </div>
 
-      <Card className="relative">
-        <CardHeader>
-          <CardTitle>Dub Your Audio</CardTitle>
-          <CardDescription>Translate your audio into one of 29 languages while keeping the original voice characteristics.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="audio-upload">Upload Audio File</Label>
-            <Input
-              id="audio-upload"
-              type="file"
-              accept="audio/*"
-              onChange={handleFileChange}
-              disabled={loading || isComingSoon}
-            />
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Upload an MP3 or WAV file (max 500MB, 45 minutes).
-            </p>
-          </div>
+      {/* Search Bar */}
+      <div className="mb-8">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+          <Input
+            placeholder="Search dubbings by name or language..."
+            className="pl-10 focus-visible:ring-2 focus-visible:ring-purple-500/80"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="target-language">Target Language</Label>
-            <Select
-              value={targetLanguage}
-              onValueChange={setTargetLanguage}
-              disabled={loading || isComingSoon}
-            >
-              <SelectTrigger id="target-language">
-                <SelectValue placeholder="Select a language" />
-              </SelectTrigger>
-              <SelectContent>
-                {supportedLanguages.map((lang) => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Choose the language to dub your audio into.
-            </p>
-          </div>
-
-          {dubbedResult && (
-            <div className="space-y-2">
-              <Label>Dubbed Audio</Label>
-              <div className="flex items-center gap-4">
-                <audio controls src={dubbedResult.dubbedUrl} className="w-full max-w-md">
-                  Your browser does not support the audio element.
-                </audio>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  disabled={isComingSoon}
-                >
-                  <a href={dubbedResult.dubbedUrl} download={`dubbed_audio_${dubbedResult.targetLanguage}.mp3`}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </a>
-                </Button>
+      <AnimatePresence mode="wait">
+        {filteredDubbings.length > 0 ? (
+          <motion.div
+            key="dubbing-list"
+            className="grid grid-cols-1 gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredDubbings.map((dubbing) => (
+              <ContentCard
+                key={dubbing.project_id}
+                id={dubbing.project_id}
+                title={formatTitle(dubbing)}
+                created_at={dubbing.created_at}
+                onDelete={handleDeleteDubbing}
+                setToDelete={setDubbingToDelete}
+                type="dubbing"
+              />
+            ))}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="empty-state-illustrated"
+            variants={emptyStateVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <div className="text-center py-16">
+              <div className="flex flex-col items-center">
+                <EmptySvg className="h-32 w-auto mb-6 text-slate-300 dark:text-slate-700" />
+                <h3 className="font-semibold text-xl text-slate-800 dark:text-slate-200 mb-2">
+                  No dubbed media yet
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                  {searchQuery
+                    ? `We couldn't find a dubbing matching "${searchQuery}".`
+                    : "Dub your first audio or video into another language with AI."}
+                </p>
+                {!searchQuery && (
+                  <Link href="/dashboard/dubbing/new">
+                    <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Dubbing
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/topics")}
-            disabled={isComingSoon}
-          >
-            Back to Topics
-          </Button>
-          <Button
-            onClick={handleDubAudio}
-            className="bg-slate-950 hover:bg-slate-900 text-white"
-            disabled={loading || !audioFile || !targetLanguage || isComingSoon}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Dubbing...
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                Dub Audio
-              </>
-            )}
-          </Button>
-        </CardFooter>
-
-        {isComingSoon && (
-          <div className="absolute inset-0 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <Clock className="h-12 w-12 mx-auto text-slate-500 dark:text-slate-400" />
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                Coming Soon
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 max-w-md">
-                Stay tuned to unlock this exciting feature to dub your voce into 29 languages and reach global audience!
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => router.push("/topics")}
-                className="bg-slate-950 hover:bg-slate-900 text-white"
-              >
-                Back to Topics
-              </Button>
-            </div>
-          </div>
+          </motion.div>
         )}
-      </Card>
-    </div>
-  );
+      </AnimatePresence>
+    </motion.div>
+  )
 }
+

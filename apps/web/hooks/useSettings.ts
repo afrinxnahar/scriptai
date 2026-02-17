@@ -146,14 +146,27 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
     if (!user?.email) return;
     setIsChangingPassword(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const response = await fetch(`${backendUrl}/api/v1/auth/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: user.email }),
       });
-      if (error) throw error;
-      toast.success("Password reset email sent");
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send password reset email");
+      }
+
+      toast.success("Password reset email sent", {
+        description: "If an account with that email exists, we have sent a password reset link.",
+      });
     } catch (error: any) {
       toast.error("Error sending password reset email", {
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
       });
     } finally {
       setIsChangingPassword(false);

@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 
 function extractVideoId(url: string): string | null {
-  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  // Support regular YouTube URLs: youtube.com/watch?v=, youtube.com/embed/, youtube.com/v/, youtu.be/, youtube.com/shorts/
+  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
   const match = url.match(youtubeRegex);
   return match && match[1] ? match[1] : null;
 }
 
-export async function GET(request: Request){
-    const { searchParams } = new URL(request.url);
-      const videoUrl = searchParams.get("videoUrl");
-      const apiKey = process.env.YOUTUBE_API_KEY;
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const videoUrl = searchParams.get("videoUrl");
+  const apiKey = process.env.YOUTUBE_API_KEY;
 
-      if (!apiKey) {
+  if (!apiKey) {
     console.error("YouTube API key is not configured.");
     return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
   }
@@ -28,7 +29,7 @@ export async function GET(request: Request){
 
   const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
 
-  try{
+  try {
     const response = await fetch(apiUrl)
     const data = await response.json();
 

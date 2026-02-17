@@ -1,10 +1,27 @@
 {
-  "name": "supabase",
+  "name": "@repo/supabase",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-"scripts": {
-  "supabase:dev": "pnpx supabase start", 
+  "description": "Shared Supabase config and CLI",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepare": "tsup",
+    "supabase:dev": "pnpx supabase start",
     "supabase:init": "pnpx supabase init",
     "supabase:link": "pnpx supabase link --project-ref <your-project-ID>",
     "supabase:pull": "pnpx supabase db pull",
@@ -12,5 +29,14 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.76.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsup": "catalog:"
+  }
 }

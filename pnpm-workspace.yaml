@@ -1,3 +1,14 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+catalog:
+  typescript: ^5.9.3
+  tsup: ^8.5.0
+  "@types/node": ^20
+  "@types/eslint": ^8
+  "supabase": ^2.54.10
+  "@google/genai": ^1.12.0
+  "@elevenlabs/elevenlabs-js": ^2.21.0
+  "bullmq": ^5.62.2
+  "axios": ^1.11.0

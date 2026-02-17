@@ -11,6 +11,9 @@
     "lint": "echo 'No source JavaScript files to lint'",
     "generate:component": "turbo gen react-component"
   },
+  "dependencies": {
+    "sonner": "^1.7.1"
+  },
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@repo/typescript-config": "workspace:*",

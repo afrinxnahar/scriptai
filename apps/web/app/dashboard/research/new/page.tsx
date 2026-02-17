@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import RecentTopicsList from "@/components/dashboard/research/RecentTopicsList";
 import ResearchForm from "@/components/dashboard/research/ResearchForm";
 import ResearchResults from "@/components/dashboard/research/ResearchResults";
-import { ResearchTopic } from "@repo/validation/src/types/researchTopicTypes";
+import { ResearchTopic } from "@repo/validation";
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired";
 import { useSupabase } from "@/components/supabase-provider";
 
@@ -49,7 +49,7 @@ export default function NewTopicPage() {
 
       setActiveTab("results");
     } catch (error: any) {
-      toast.error("Error researching topic", { description: error.message });
+      toast.error("Error researching idea", { description: error.message });
     } finally {
       setIsResearching(false);
     }
@@ -69,14 +69,14 @@ export default function NewTopicPage() {
   return (
     <div className="container py-8 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">New Topic Research</h1>
-        <p className="text-muted-foreground mt-1">Research topics for your YouTube videos with AI assistance</p>
+        <h1 className="text-3xl font-bold tracking-tight">New Idea Research</h1>
+        <p className="text-muted-foreground mt-1">Research ideas for your YouTube videos with AI assistance</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="sticky top-1 z-20 grid w-full grid-cols-2 bg-background shadow-sm">
-          <TabsTrigger value="research">Research Topic</TabsTrigger>
-          <TabsTrigger value="results" disabled={!researchResult}>Research Results</TabsTrigger>
+          <TabsTrigger value="research">Brainstorm Idea</TabsTrigger>
+          <TabsTrigger value="results" disabled={!researchResult}>Results</TabsTrigger>
         </TabsList>
 
         <TabsContent value="research" className="mt-6">

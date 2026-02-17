@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSupabaseServer } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib';
 
@@ -262,7 +262,7 @@ export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
-    const supabase = await createClient();
+    const supabase = await getSupabaseServer();
     const { id: scriptId } = await context.params;
 
     try {

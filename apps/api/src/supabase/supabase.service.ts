@@ -1,20 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { createSupabaseClient } from '../config/supabase.config';
+import { createSupabaseClient, getSupabaseServiceEnv } from '@repo/supabase';
 
 @Injectable()
 export class SupabaseService {
-  private readonly supabase: SupabaseClient | null;
+  private readonly supabase;
+  private readonly adminSupabase;
 
   constructor() {
-    this.supabase = createSupabaseClient();
+    const { url, key } = getSupabaseServiceEnv();
+    this.supabase = createSupabaseClient(url, key);
+
+    // Admin client with service role key for admin operations
+    const { url: adminUrl, key: adminKey } = getSupabaseServiceEnv();
+    if (adminUrl && adminKey) {
+      this.adminSupabase = createSupabaseClient(adminUrl, adminKey);
+    }
   }
 
-  getClient(): SupabaseClient | null {
+  getClient() {
     return this.supabase;
   }
 
-  isConfigured(): boolean {
-    return this.supabase !== null;
+  getAdminClient() {
+    return this.adminSupabase;
   }
 }

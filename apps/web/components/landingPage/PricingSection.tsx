@@ -6,6 +6,7 @@ import { WobbleCard } from "../ui/wobble-card"
 export default function PricingSection() {
     const baseFeatures = {
         starter: [
+            "500 free credits/month",
             "Connect YouTube channel",
             "AI model training",
             "New idea research",
@@ -16,11 +17,13 @@ export default function PricingSection() {
         ],
         proExtras: [
             "Everything in Starter",
+            "5k credits/month",
             "Unlimited feature usage",
             "Audio dubbing",
         ],
         enterpriseExtras: [
             "Everything in Pro",
+            "100k credits/month",
             "Advanced analytics",
             "Team collaboration",
             "Custom fine-tuned model",

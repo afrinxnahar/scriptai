@@ -13,3 +13,5 @@ export interface Script {
   title: string
   created_at: string
 }
+
+export * from "./SubtitleTypes";

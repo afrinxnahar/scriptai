@@ -23,7 +23,7 @@ export default function ThumbnailGenerator() {
   const [loading, setLoading] = useState(false)
   const [thumbnailDescription, setThumbnailDescription] = useState("")
   const [thumbnailUrl, setThumbnailUrl] = useState("")
-  const [isComingSoon] = useState(true) // Toggle this to false when feature is released
+  const [isComingSoon] = useState(false) // Toggle this to false when feature is released
 
   const handleGenerateThumbnail = async () => {
     if (isComingSoon) return // Prevent interaction when coming soon

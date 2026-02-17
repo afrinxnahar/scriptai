@@ -18,6 +18,7 @@ import {
     Download,
     CalendarDays,
     Loader2,
+    Languages,
 } from "lucide-react";
 
 import {
@@ -45,7 +46,7 @@ interface ContentCardProps {
     onDelete: () => Promise<void>;
     onExport?: (scriptId: string) => Promise<void>;
     setToDelete: (id: string | null) => void;
-    type: "scripts" | "research";
+    type: "scripts" | "research" | "dubbing";
 }
 
 export function ContentCard({
@@ -60,21 +61,22 @@ export function ContentCard({
     const [isExporting, setIsExporting] = useState(false);
 
     const creationDate = new Date(created_at).toLocaleDateString();
-    const isScript = type === "scripts";
 
     // Dynamic values based on type
     const linkHref = `/dashboard/${type}/${id}`;
-    const Icon = isScript ? FileText : BookOpen;
-    const deleteLabel = isScript ? "Delete Script" : "Delete Research";
-    const dialogDescription = isScript
+    const Icon = type === "scripts" ? FileText : type === "dubbing" ? Languages : BookOpen;
+    const deleteLabel = type === "scripts" ? "Delete Script" : type === "dubbing" ? "Delete Dubbing" : "Delete Research";
+    const dialogDescription = type === "scripts"
         ? "This will permanently delete your script and all its associated data."
+        : type === "dubbing"
+        ? "This will permanently delete your dubbed media and all its associated data."
         : "This will permanently delete your research and all its associated data.";
 
 
     const handleExport = () => {
         if (!onExport) return;
         const exportPromise = onExport(id);
-        const contentTypeName = type === 'scripts' ? 'script' : 'research';
+        const contentTypeName = type === 'scripts' ? 'script' : type === 'dubbing' ? 'dubbing' : 'research';
 
         setIsExporting(true);
 

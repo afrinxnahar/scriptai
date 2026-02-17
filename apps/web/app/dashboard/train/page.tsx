@@ -16,6 +16,9 @@ export default function TrainAIPage() {
     profile,
     videos,
     pageLoading,
+    isTraining,
+    progress,
+    statusMessage,
     uploading,
     showModal,
     isConnectingYoutube,
@@ -63,6 +66,9 @@ export default function TrainAIPage() {
             uploading={uploading}
             isAiTrained={profile?.ai_trained}
             isYtConnected={profile?.youtube_connected}
+            isTraining={isTraining}
+            progress={progress}
+            statusMessage={statusMessage}
             onUrlChange={handleVideoUrlChange}
             onUrlBlur={handleUrlBlur}
             onAddUrl={handleAddVideoUrl}

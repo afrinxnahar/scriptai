@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export interface ScriptRecord {
@@ -26,7 +26,7 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const params = await context.params;
   const scriptId = params.id;
 
@@ -59,7 +59,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const params = await context.params;
   const scriptId = params.id;
 
@@ -104,7 +104,7 @@ export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const params = await context.params;
   const scriptId = params.id;
 

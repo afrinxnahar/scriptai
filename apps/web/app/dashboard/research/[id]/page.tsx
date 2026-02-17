@@ -4,21 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import ResearchDetails from "@/components/dashboard/research/ResearchDetails";
+import { ResearchTopic } from "@repo/validation";
 
-interface ResearchTopic {
-  id: string;
-  topic: string;
-  context?: string;
-  created_at: string;
-  research_data: {
-    summary: string;
-    keyPoints: string[];
-    trends: string[];
-    questions: string[];
-    contentAngles: string[];
-    sources: string[];
-  };
-}
+// interface ResearchTopic {
+//   id: string;
+//   topic: string;
+//   context?: string;
+//   created_at: string;
+//   research_data: {
+//     summary: string;
+//     keyPoints: string[];
+//     trends: string[];
+//     questions: string[];
+//     contentAngles: string[];
+//     sources: string[];
+//   };
+// }
 
 export default function TopicDetails() {
   const router = useRouter();

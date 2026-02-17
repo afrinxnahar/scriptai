@@ -11,7 +11,7 @@ import { getScripts, Script } from "@/lib/api/getScripts"
 
 
 export default function Dashboard() {
-  const { supabase, user, profile, fetchUserProfile } = useSupabase()
+  const { supabase, user, profile, fetchUserProfile, session } = useSupabase()
 
   const [recentScripts, setRecentScripts] = useState<Script[]>([])
   const [isLoadingScripts, setIsLoadingScripts] = useState(true)
@@ -33,6 +33,8 @@ export default function Dashboard() {
       }
     }
 
+    console.log(session)
+
     fetchScripts()
   }, [])
 
@@ -49,10 +51,10 @@ export default function Dashboard() {
     setIsDisconnectingYoutube(true)
     try {
       const { error } = await supabase
-          .from("profiles")
-          .update({ ai_trained: false, youtube_connected: false })
-          .eq("user_id", user.id)
-          .single()
+        .from("profiles")
+        .update({ ai_trained: false, youtube_connected: false })
+        .eq("user_id", user.id)
+        .single()
 
       if (error) throw error
 
@@ -67,38 +69,38 @@ export default function Dashboard() {
 
   if (!profile || isLoadingScripts) {
     return (
-        <div className="container py-8">
-          <DashboardSkeleton />
-        </div>
+      <div className="container py-8">
+        <DashboardSkeleton />
+      </div>
     )
   }
 
   const isSetupComplete = profile.youtube_connected && profile.ai_trained
 
   return (
-      <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome, {profile.full_name || "Creator"}
-          </h1>
-        </div>
-
-        {isSetupComplete ? (
-            <ReturningUserHub
-                profile={profile}
-                recentScripts={recentScripts}
-                disconnectYoutubeChannel={handleDisconnectYoutube}
-                disconnectingYoutube={isDisconnectingYoutube}
-            />
-        ) : (
-            <NewUserOnboarding
-                profile={profile}
-                connectYoutubeChannel={handleConnectYoutube}
-                connectingYoutube={isConnectingYoutube}
-                disconnectYoutubeChannel={handleDisconnectYoutube}
-                disconnectingYoutube={isDisconnectingYoutube}
-            />
-        )}
+    <div className="container py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome, {profile.full_name || "Creator"}
+        </h1>
       </div>
+
+      {isSetupComplete ? (
+        <ReturningUserHub
+          profile={profile}
+          recentScripts={recentScripts}
+          disconnectYoutubeChannel={handleDisconnectYoutube}
+          disconnectingYoutube={isDisconnectingYoutube}
+        />
+      ) : (
+        <NewUserOnboarding
+          profile={profile}
+          connectYoutubeChannel={handleConnectYoutube}
+          connectingYoutube={isConnectingYoutube}
+          disconnectYoutubeChannel={handleDisconnectYoutube}
+          disconnectingYoutube={isDisconnectingYoutube}
+        />
+      )}
+    </div>
   )
 }

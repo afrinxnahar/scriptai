@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 // GET: Fetch user's referral data
 export async function GET() {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -25,8 +25,8 @@ export async function GET() {
 
 
     const { data: referrals, error: referralsError } = await supabase
-        .from('referrals')
-        .select(`
+      .from('referrals')
+      .select(`
         id,
         referred_user_id,
         status,
@@ -41,8 +41,8 @@ export async function GET() {
           email
         )
       `)
-        .eq('referrer_id', profile.id)
-        .order('created_at', { ascending: false });
+      .eq('referrer_id', profile.id)
+      .order('created_at', { ascending: false });
 
     if (referralsError) {
       console.error('Error fetching referrals:', referralsError);
@@ -74,23 +74,23 @@ export async function GET() {
 
 // POST: Generate new referral code for user
 export async function POST() {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
 
 
 
-  try{
-    const {data: {user}, error: userError} = await supabase.auth.getUser();
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      return NextResponse.json({message: "Unauthorized" }, {status: 404});
+      return NextResponse.json({ message: "Unauthorized" }, { status: 404 });
     }
 
     const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('referral_code')
-        .eq('user_id', user.id)
-        .single();
+      .from('profiles')
+      .select('referral_code')
+      .eq('user_id', user.id)
+      .single();
     if (profileError) {
-      return NextResponse.json({message: "Profile not found"}, {status: 404});
+      return NextResponse.json({ message: "Profile not found" }, { status: 404 });
 
     }
 
@@ -105,19 +105,19 @@ export async function POST() {
     let attempts = 0;
     const maxAttempts = 5;
 
-    while(attempts < maxAttempts) {
+    while (attempts < maxAttempts) {
       referralCode = generateReferralCode()
 
-      const {data: existingCode} = await supabase
-          .from('profile')
-          .select('referral_code')
-          .eq('referral_code', referralCode)
-          .single();
-      if(!existingCode){
+      const { data: existingCode } = await supabase
+        .from('profile')
+        .select('referral_code')
+        .eq('referral_code', referralCode)
+        .single();
+      if (!existingCode) {
         const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ referral_code: referralCode })
-            .eq('user_id', user.id);
+          .from('profiles')
+          .update({ referral_code: referralCode })
+          .eq('user_id', user.id);
 
         if (updateError) {
           console.error('Failed to update referral code:', updateError);
@@ -135,7 +135,7 @@ export async function POST() {
     }, { status: 500 });
 
 
-  }catch (error) {
+  } catch (error) {
     console.error('Error in POST referrals:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
@@ -148,6 +148,6 @@ function generateReferralCode(): string {
   crypto.getRandomValues(array);
 
   return Array.from(array)
-      .map(x => chars[x % chars.length])
-      .join('');
+    .map(x => chars[x % chars.length])
+    .join('');
 }

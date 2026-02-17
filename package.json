@@ -12,7 +12,9 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:setup": "turbo run dev --filter='./apps/*'",
     "build": "turbo run build",
+    "build:packages": "turbo run build --filter='./packages/*'",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "lint": "turbo run lint",
@@ -21,16 +23,28 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@google/genai": "^1.13.0",
     "@repo/config": "workspace:*",
+    "@repo/email-templates": "workspace:*",
+    "@repo/supabase": "workspace:*",
+    "@repo/train-ai-worker": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@repo/validation": "workspace:*",
     "eslint": "^9.0.0",
     "globals": "^15.0.0",
     "prettier": "^3.6.2",
     "supabase": "^2.48.3",
-    "turbo": "^2.5.6"
+    "turbo": "^2.7.2"
   },
-  "packageManager": "pnpm@8.15.5",
+  "packageManager": "pnpm@9.12.3",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@types/node": "^24.9.2",
+    "axios": "^1.11.0",
+    "bullmq": "^5.62.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
   }
 }

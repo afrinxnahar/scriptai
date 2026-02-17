@@ -39,7 +39,7 @@ export default function RootLayout({
         >
           <SupabaseProvider>
             <main>{children}</main>
-            <Toaster closeButton />
+            <Toaster closeButton={true} richColors />
           </SupabaseProvider>
         </ThemeProvider>
         <SpeedInsights />
