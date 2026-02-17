@@ -5,13 +5,13 @@ export type SubtitleResponse = {
     video_url: string;
     subtitles_json: string;
     status: "done" | "queued" | "processing" | "failed";
+    target_language: string;
+    detected_language: string;
     language: string;
-    detectedLanguage: string;
     duration: string;
     error_message: string;
     created_at: string;
     updated_at: string;
     filename: string;
-};
 
-// SubtitleLine is now exported from schema/subtitle.schema.ts
+};

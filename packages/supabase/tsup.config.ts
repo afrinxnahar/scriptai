@@ -6,4 +6,6 @@ export default defineConfig({
   dts: true,              // Generate .d.ts files
   clean: true,            // Clean dist/
   sourcemap: true,        // Dev help
+    splitting: false,
+    treeshake: true,
 });

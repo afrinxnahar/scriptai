@@ -2,11 +2,10 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import { motion } from 'motion/react';
-import { Loader2, X, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import Link from 'next/link';
 
 import { SubtitleHeader } from '@/components/dashboard/subtitles/SubtitleHeader';
 import { VideoPlayer } from '@/components/dashboard/subtitles/VideoPlayer';
@@ -17,34 +16,10 @@ import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { useSubtitleEditor } from '@/hooks/useSubtitleEditor';
 import { useSubtitleFileOperations } from '@/hooks/useSubtitleFileOperations';
 import { useSubtitleGeneration } from '@/hooks/useSubtitleGeneration';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { convertJsonToVTT } from "@/utils/vttHelper";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SubtitleEditorSkeleton } from "@/components/dashboard/subtitles/skeleton/SubtitleEditorSkeleton";
-
-const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-    }
-};
-
-const gridVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-    }
-};
-
-const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.3 }
-    }
-};
 
 
 
@@ -58,7 +33,7 @@ export default function SubtitleEditorPage() {
         subtitleData?.video_url,
         subtitles
     );
-    const { editingIndex, setEditingIndex, updateSubtitle, handleAddLine, handleDeleteLine } = useSubtitleEditor(
+    const { editingIndex, setEditingIndex, updateSubtitle, handleAddLine, handleDeleteLine, handleClear } = useSubtitleEditor(
         subtitles,
         setSubtitles,
         currentTime
@@ -71,8 +46,24 @@ export default function SubtitleEditorPage() {
         subtitleData?.video_url
     );
     const { isGenerating, handleGenerate } = useSubtitleGeneration(id as string, videoDuration, refetch);
+    const { undo, redo, canUndo, canRedo } = useUndoRedo(subtitles, setSubtitles);
     const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null);
     const debouncedSubtitles = useDebounce(subtitles, 500);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                if (canUndo) undo();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                if (canRedo) redo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undo, redo, canUndo, canRedo]);
 
     useEffect(() => {
         if (!debouncedSubtitles || debouncedSubtitles.length === 0) {
@@ -101,54 +92,38 @@ export default function SubtitleEditorPage() {
 
     if (error) {
         return (
-            <div className="container mx-auto max-w-3xl p-4 md:p-8 text-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                >
-                    <Card className="p-8 border-red-100 shadow-lg">
-                        <X className="w-16 h-16 mx-auto text-red-500" />
-                        <h2 className="mt-4 text-2xl font-semibold">Error Loading Job</h2>
-                        <p className="mt-2 text-muted-foreground">{error}</p>
-                        <Button asChild className="mt-6 bg-black hover:bg-black/90">
-                            <Link href="/dashboard/subtitles">
-                                <ArrowLeft className="w-4 h-4 mr-2" /> Go Back
-                            </Link>
-                        </Button>
-                    </Card>
-                </motion.div>
+            <div className="h-screen flex items-center justify-center p-8">
+                <Card className="p-8 border-slate-200 dark:border-slate-800 max-w-md">
+                    <X className="w-12 h-12 mx-auto text-slate-400" />
+                    <h2 className="mt-4 text-xl font-semibold text-center">Error Loading Job</h2>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 text-center">{error}</p>
+                    <Button asChild className="mt-6 w-full bg-slate-900 hover:bg-slate-800">
+                        <Link href="/dashboard/subtitles">
+                            <ArrowLeft className="w-4 h-4 mr-2" /> Go Back
+                        </Link>
+                    </Button>
+                </Card>
             </div>
         );
     }
 
     return (
-        <motion.div
-            className="container mx-auto max-w-7xl space-y-6 p-4 md:p-8"
-            variants={containerVariants}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            initial="hidden"
-            animate="visible"
-        >
-            <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-50/50 via-transparent to-purple-50/50 blur-3xl -z-10" />
-                <SubtitleHeader
-                    filename={subtitleData?.filename || 'Loading...'}
-                    videoPath={subtitleData?.video_path || 'Loading...'}
-                    isSaving={isSaving}
-                    hasSubtitles={subtitles.length > 0}
-                    onSave={handleSave}
-                    onDownload={handleDownload}
-                />
-            </div>
+        <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+            <SubtitleHeader
+                filename={subtitleData?.filename || 'Loading...'}
+                videoPath={subtitleData?.video_path || 'Loading...'}
+                isSaving={isSaving}
+                hasSubtitles={subtitles.length > 0}
+                onSave={handleSave}
+                onDownload={handleDownload}
+                onUndo={undo}
+                onRedo={redo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+            />
 
-            <motion.div
-                className="grid grid-cols-1 gap-6 lg:grid-cols-2"
-                variants={gridVariants}
-                initial="hidden"
-                animate="visible"
-            >
-                <motion.div variants={itemVariants} className="space-y-3">
+            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden border-t border-slate-200 dark:border-slate-800">
+                <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 p-3 sm:p-4 lg:p-6 overflow-y-auto bg-white dark:bg-slate-950 h-1/2 lg:h-full">
                     <VideoPlayer
                         ref={videoRef}
                         videoUrl={subtitleData?.video_url || ''}
@@ -157,12 +132,13 @@ export default function SubtitleEditorPage() {
                         onDownloadVideo={handleDownloadVideo}
                         isDownloadDisabled={!subtitles.length || isSaving}
                         downloadVideoLoading={downloadVideoLoading}
+                        detectedLanguage={subtitleData?.detected_language}
+                        targetLanguage={subtitleData?.language}
+                        language={subtitleData?.language}
                     />
-                </motion.div>
+                </div>
 
-
-                <motion.div variants={itemVariants} className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-br from-purple-100/20 to-transparent rounded-xl blur-xl -z-10" />
+                <div className="w-full lg:w-1/2 h-1/2 lg:h-full">
                     <SubtitleEditorPanel
                         subtitles={subtitles}
                         currentSub={currentSubtitle}
@@ -172,13 +148,14 @@ export default function SubtitleEditorPage() {
                         onAddLine={handleAddLine}
                         onUpdate={updateSubtitle}
                         onDelete={handleDeleteLine}
+                        onClear={handleClear}
                         onSetEditing={setEditingIndex}
                         onSeek={seekTo}
                         onGenerate={handleGenerate}
                         onFileChange={handleFileUpload}
                     />
-                </motion.div>
-            </motion.div>
-        </motion.div>
+                </div>
+            </div>
+        </div>
     );
 }

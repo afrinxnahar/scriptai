@@ -5,7 +5,7 @@ import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 
 export function useSubtitleEditor(
     subtitles: SubtitleLine[],
-    setSubtitles: (subtitles: SubtitleLine[]) => void,
+    setSubtitles: (subtitles: SubtitleLine[] | []) => void,
     currentTime: number
 ) {
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -34,11 +34,17 @@ export function useSubtitleEditor(
         toast.success('Subtitle deleted');
     };
 
+    const handleClear = () => {
+        setSubtitles([]);
+        toast.success('Subtitles cleared');
+    };
+
     return {
         editingIndex,
         setEditingIndex,
         updateSubtitle,
         handleAddLine,
         handleDeleteLine,
+        handleClear
     };
 }
