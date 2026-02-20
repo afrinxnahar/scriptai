@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException, InternalServerErrorException, PayloadTooLargeException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException, InternalServerErrorException, PayloadTooLargeException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
@@ -24,39 +24,38 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 
-async function waitForFileActive(ai: GoogleAIInstance, fileName: string, maxWaitTime = 120000) {
-  const startTime = Date.now();
-  const pollInterval = 3000;
+const FILE_POLL_INTERVAL = 3000;
+const FILE_MAX_WAIT_TIME = 120000;
 
-  console.log(`Polling for file status: ${fileName}`);
+async function waitForFileActive(ai: GoogleAIInstance, fileName: string, maxWaitTime = FILE_MAX_WAIT_TIME) {
+  const startTime = Date.now();
 
   while (Date.now() - startTime < maxWaitTime) {
-    try {
-      const file = await ai.files.get({ name: fileName });
-      console.log(`File status: ${file.state} (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+    const file = await ai.files.get({ name: fileName });
 
-      if (file.state === 'ACTIVE') {
-        return file;
-      }
-      if (file.state === 'FAILED') {
-        throw new Error(`File processing failed: ${(file as any).stateDescription || file.state}`);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-    } catch (error) {
-      console.error('Error checking file status:', error);
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    if (file.state === 'ACTIVE') {
+      return file;
     }
+    if (file.state === 'FAILED') {
+      throw new Error(`File processing failed: ${(file as Record<string, unknown>).stateDescription || file.state}`);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, FILE_POLL_INTERVAL));
   }
   throw new Error(`File processing timeout for ${fileName} after ${maxWaitTime / 1000}s`);
 }
 
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
+const MAX_VIDEO_DURATION = 10 * 60; // 10 minutes in seconds
+
 @Injectable()
 export class SubtitleService {
+  private readonly logger = new Logger(SubtitleService.name);
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   private async logErrorToDB(message: string, subtitleId: string) {
     if (!subtitleId) return;
@@ -69,14 +68,13 @@ export class SubtitleService {
         })
         .eq("id", subtitleId);
     } catch (dbError) {
-      console.error("Failed to record error in DB:", dbError);
+      this.logger.error('Failed to record error in DB', dbError);
     }
   }
 
   async create(input: CreateSubtitleInput, userId: string) {
     const { subtitleId, language, targetLanguage, duration } = input;
     let tempFilePath: string | null = null;
-    console.log('started')
 
     try {
       const { data: profileData, error: profileError } = await this.supabaseService.getClient()
@@ -156,23 +154,18 @@ Your task is to transcribe the provided audio file and generate precise, time-st
 }
 `;
 
-      console.log('Converting file to buffer...');
       const audioBuffer = await fetchVideoAsBuffer(video_url);
       const fileName = getFileNameFromUrl(video_url);
-      console.log('Buffer length:', audioBuffer.length);
 
       tempFilePath = path.join(os.tmpdir(), `${Date.now()}_${fileName}`);
-      console.log('Writing to temp file:', tempFilePath);
       await fs.writeFile(tempFilePath, audioBuffer);
 
-      console.log('Uploading to Google AI...');
       const fileType = getMimeTypeFromUrl(video_url);
       const myFile = await ai.files.upload({
         file: tempFilePath,
         config: { mimeType: fileType },
       });
 
-      console.log('File uploaded:', myFile);
       await waitForFileActive(ai, myFile.name!);
 
       const parts = [
@@ -185,24 +178,20 @@ Your task is to transcribe the provided audio file and generate precise, time-st
         }
       ];
 
-      console.log('Generating content...');
       let result: any;
       try {
         result = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: [{ role: "user", parts }],
         });
-        console.log('Generation complete');
       } catch (geminiError) {
-        console.error('Gemini API error:', geminiError);
+        this.logger.error('Gemini API error', geminiError);
         await this.logErrorToDB(`Gemini API error: ${geminiError}`, subtitleId);
         throw new InternalServerErrorException('Failed to generate subtitles from Gemini API');
       }
 
       if (tempFilePath) {
-        await fs.unlink(tempFilePath).catch(err =>
-          console.error('Failed to delete temp file:', err)
-        );
+        await fs.unlink(tempFilePath).catch(() => {});
       }
 
       let subtitlesData;
@@ -216,14 +205,12 @@ Your task is to transcribe the provided audio file and generate precise, time-st
         }
       } catch (parseError) {
         await this.logErrorToDB(`Failed to parse Gemini JSON: ${String(parseError)}`, subtitleId);
-        console.error('Failed to parse JSON from Gemini:', parseError, "Raw text:", result.text);
+        this.logger.error('Failed to parse JSON from Gemini', parseError);
         throw new InternalServerErrorException('Failed to parse subtitle data');
       }
 
       const subtitlesJson = subtitlesData.subtitles;
       const detectedLanguage = subtitlesData.detected_language;
-
-      console.log('Detected language:', detectedLanguage);
 
       const { data, error: subtitleInsertError } = await this.supabaseService.getClient()
         .from("subtitle_jobs")
@@ -248,8 +235,6 @@ Your task is to transcribe the provided audio file and generate precise, time-st
       const totalTokens = result?.usageMetadata?.totalTokenCount ?? 0;
       const creditsConsumed = calculateCreditsFromTokens({ totalTokens });
 
-      console.log(`Tokens used: ${totalTokens}, Credits to deduct: ${creditsConsumed}`);
-
       if (!hasEnoughCredits(profileData.credits, creditsConsumed)) {
         await this.logErrorToDB('Insufficient credits for token usage', subtitleId);
         throw new ForbiddenException('Insufficient credits for this operation.');
@@ -262,7 +247,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
         });
 
       if (updateError) {
-        console.error('Error updating credits:', updateError);
+        this.logger.error('Error updating credits', updateError);
         throw new InternalServerErrorException('Failed to update credits');
       }
 
@@ -280,9 +265,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
       };
     } catch (error) {
       if (tempFilePath) {
-        fs.unlink(tempFilePath).catch(err =>
-          console.error('Failed to delete temp file:', err)
-        );
+        fs.unlink(tempFilePath).catch(() => {});
       }
       throw error;
     }
@@ -343,7 +326,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
       .eq("user_id", userId);
 
     if (updateError) {
-      console.error(updateError);
+      this.logger.error('Failed to update subtitles', updateError);
       throw new InternalServerErrorException('Failed to update subtitles');
     }
 
@@ -365,7 +348,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
         .single();
 
       if (subtitleError && subtitleError.code !== 'PGRST116') {
-        console.error('Subtitle lookup error:', subtitleError);
+        this.logger.error('Subtitle lookup error', subtitleError);
         throw new NotFoundException('Subtitle lookup error');
       }
 
@@ -402,7 +385,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
       .eq("id", id)
       .eq("user_id", userId);
     if (updateError) {
-      console.error(updateError);
+      this.logger.error('Failed to update subtitles', updateError);
       throw new InternalServerErrorException('Failed to update subtitles');
     }
     return {
@@ -436,13 +419,11 @@ Your task is to transcribe the provided audio file and generate precise, time-st
       throw new BadRequestException('Invalid duration format');
     }
 
-    const maxSize = 200 * 1024 * 1024; // 200MB
-    if (file.size > maxSize) {
+    if (file.size > MAX_FILE_SIZE) {
       throw new PayloadTooLargeException('File size must be less than 200MB');
     }
 
-    const maxDuration = 10 * 60; // 10 minutes
-    if (parsedDuration > maxDuration) {
+    if (parsedDuration > MAX_VIDEO_DURATION) {
       throw new BadRequestException('Video duration must be 10 minutes or less');
     }
 
@@ -504,11 +485,6 @@ Your task is to transcribe the provided audio file and generate precise, time-st
 
   async burnSubtitle(input: BurnSubtitleInput): Promise<Buffer> {
     const { videoUrl, subtitles } = input;
-
-    console.log('Starting burnSubtitle process...');
-    console.log(' Video URL:', videoUrl);
-    console.log(' Subtitles received:', subtitles.length);
-
     const videoBuffer = await fetchVideoAsBuffer(videoUrl);
 
     const tmpDir = path.join(os.tmpdir(), 'video_processing');
@@ -520,8 +496,6 @@ Your task is to transcribe the provided audio file and generate precise, time-st
 
     try {
       await fs.writeFile(videoPath, videoBuffer);
-      console.log('💾 Saved video to:', videoPath);
-
       const srtContent = convertJsonToSrt(subtitles);
       await fs.writeFile(srtPath, srtContent, 'utf-8');
 
@@ -535,22 +509,12 @@ Your task is to transcribe the provided audio file and generate precise, time-st
         ffmpeg(videoPath)
           .outputOptions(['-c:v', 'libx264', '-c:a', 'copy'])
           .videoFilter(`subtitles='${safeSubtitlePath}'`)
-          .on('start', (cmd) => console.log(' FFmpeg command:', cmd))
-          .on('progress', (p) => console.log(`⏳ FFmpeg progress: ${p.percent?.toFixed(2)}%`))
-          .on('end', () => {
-            console.log(' FFmpeg completed successfully');
-            resolve();
-          })
-          .on('error', (err) => {
-            console.error('Burn subtitle error:', err);
-            reject(err);
-          })
+          .on('end', () => resolve())
+          .on('error', (err) => reject(err))
           .save(outputPath);
       });
 
       const outputBuffer = await fs.readFile(outputPath);
-      console.log(' Output video size:', outputBuffer.length);
-
       return outputBuffer;
     } finally {
       await Promise.allSettled([

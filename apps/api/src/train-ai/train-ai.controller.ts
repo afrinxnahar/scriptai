@@ -4,12 +4,8 @@ import { Queue, Job } from 'bullmq';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
 import { trainAiSchema, type TrainAiDto } from '@repo/validation';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import type { Request } from 'express';
 import { Observable } from 'rxjs';
-
-interface AuthRequest extends Request {
-  user?: { id: string };
-}
+import type { AuthRequest } from '../common/interfaces/auth-request.interface';
 
 interface JobEvent {
   state: 'waiting' | 'active' | 'completed' | 'failed';

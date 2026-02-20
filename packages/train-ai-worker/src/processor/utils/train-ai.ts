@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { manageAccessToken, validateOAuthEnvironment } from "./token-manager";
 import { ChannelData, StyleAnalysis, Thumbnail, Transcript, VideoData } from "@repo/validation";
+import type { SupabaseClient } from "@repo/supabase";
 import axios from "axios";
 import { calculateRetryDelay, logError, shouldRetry } from "./error-handler";
 
@@ -24,16 +25,13 @@ export async function validateEnvironment(): Promise<void> {
 }
 
 // Fetch channel data
-export async function fetchChannelData(supabase: any, userId: string): Promise<ChannelData> {
-  console.log('Fetching channel data for userId:', userId);
+export async function fetchChannelData(supabase: SupabaseClient, userId: string): Promise<ChannelData> {
   const { data, error } = await supabase
     .from('youtube_channels')
     .select('channel_name, channel_id, provider_token, refresh_token, channel_description, custom_url, country, default_language, view_count, subscriber_count, video_count, topic_details')
     .eq('user_id', userId)
     .single();
   if (error || !data) {
-    console.log(error);
-    console.log(data)
     throw new Error('YouTube channel not found');
   }
   return data;
@@ -41,7 +39,7 @@ export async function fetchChannelData(supabase: any, userId: string): Promise<C
 
 // Manage YouTube access token
 export async function manageYouTubeToken(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   channelData: ChannelData
 ): Promise<{ accessToken: string; tokenRefreshed: boolean }> {
@@ -86,7 +84,6 @@ export async function fetchVideoData(
         timeout: 30000,
       });
       const videos = response.data.items;
-      console.log('Fetched video data:', videos);
       if (!videos || videos.length < 3) {
         throw new Error('Could not find at least 3 videos');
       }
@@ -95,7 +92,7 @@ export async function fetchVideoData(
           throw new Error(`Video "${video.snippet.title}" does not belong to your channel`);
         }
       }
-      return videos.map((item: any): VideoData => ({
+      return videos.map((item: Record<string, any>): VideoData => ({
         id: item.id,
         title: item.snippet.title,
         description: item.snippet.description,
@@ -110,7 +107,7 @@ export async function fetchVideoData(
         thumbnailUrl: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
         defaultAudioLanguage: item.snippet.defaultAudioLanguage || "en",
       }));
-    } catch (error: any) {
+    } catch (error) {
       retryCount++;
       if (retryCount >= maxRetries || !shouldRetry(error, retryCount, maxRetries)) {
         logError('train-ai-youtube-api', error, { videoIds, retryCount });
@@ -122,9 +119,8 @@ export async function fetchVideoData(
   throw new Error('Max retries reached for YouTube API');
 }
 
-// Analyze content style with Gemini
 export async function analyzeStyle(
-  genAI: any,
+  genAI: GoogleGenAI,
   channelData: ChannelData,
   videoData: VideoData[],
   videoUrls: string[],
@@ -134,7 +130,7 @@ export async function analyzeStyle(
   totalStyleTokens: number;
 }> {
   const prompt = `
-Analyze the following YouTube channel and video data to extract the creator's content style, which will be used for generating scripts, research topics, thumbnails, subtitles, and audio conversions. Provide a detailed analysis of the following aspects: tone (e.g., conversational, formal), vocabulary level (e.g., simple, technical), pacing (e.g., fast, slow), themes (e.g., educational, entertainment), humor style (e.g., witty, sarcastic), narrative structure (e.g., storytelling, listicle), visual style, thumbnails and descriptions, and audience engagement techniques (e.g., calls to action, audience questions). Additionally, include a comprehensive narrative overview of the creator's overall content style in the style_analysis field, synthesizing all aspects into a cohesive summary.
+Analyze the following YouTube channel and video data to extract the creator's content style, which will be used for generating scripts, research topics, thumbnails, subtitles, audio conversions, and story structure blueprints. Provide a detailed analysis of the following aspects: tone (e.g., conversational, formal), vocabulary level (e.g., simple, technical), pacing (e.g., fast, slow), themes (e.g., educational, entertainment), humor style (e.g., witty, sarcastic), narrative structure (e.g., storytelling, listicle), visual style, thumbnails and descriptions, and audience engagement techniques (e.g., calls to action, audience questions). Additionally, include a comprehensive narrative overview of the creator's overall content style in the style_analysis field, synthesizing all aspects into a cohesive summary.
 
 Channel Data:
 - Name: ${channelData.channel_name}
@@ -184,14 +180,16 @@ Video ${i + 1}:
           research_topics: { type: "string" },
           thumbnails: { type: "string" },
           subtitles: { type: "string" },
-          audio_conversion: { type: "string" }
+          audio_conversion: { type: "string" },
+          story_builder: { type: "string" }
         },
         required: [
           "script_generation",
           "research_topics",
           "thumbnails",
           "subtitles",
-          "audio_conversion"
+          "audio_conversion",
+          "story_builder"
         ]
       }
     },
@@ -228,8 +226,6 @@ Video ${i + 1}:
 
       styleAnalysis = JSON.parse(result.text) as StyleAnalysis;
 
-      console.log('Gemini style analysis result:', styleAnalysis);
-
       if (!styleAnalysis) {
         throw new Error(`Gemini failed to return structured Style Analysis data.`);
       }
@@ -239,10 +235,8 @@ Video ${i + 1}:
       if (styleAnalysis) break;
     } catch (error) {
       if (attempt === maxRetries) {
-        console.error('❌ analyzeStyle failed after max retries:', error);
         throw new Error('Failed to analyze content style');
       }
-      console.warn(`Retrying analyzeStyle... (${attempt}/${maxRetries})`);
       await new Promise(res => setTimeout(res, 2000));
     }
   }
@@ -253,7 +247,7 @@ Video ${i + 1}:
 
 // Generate embedding with Gemini
 export async function generateEmbedding(
-  genAI: any,
+  genAI: GoogleGenAI,
   styleAnalysis: StyleAnalysis,
   maxRetries = 3
 ): Promise<number[]> {
@@ -280,7 +274,7 @@ export async function generateEmbedding(
       }
       const norm = Math.sqrt(embeddingValues.reduce((sum: number, val: number) => sum + val * val, 0));
       return norm > 0 ? embeddingValues.map((val: number) => val / norm) : embeddingValues;
-    } catch (error: any) {
+    } catch (error) {
       retryCount++;
       if (retryCount >= maxRetries) {
         logError('train-ai-embedding', error, { retryCount });
@@ -294,7 +288,7 @@ export async function generateEmbedding(
 
 // Save style data to Supabase
 export async function saveStyleData(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   styleAnalysis: StyleAnalysis,
   embedding: number[],
@@ -304,8 +298,6 @@ export async function saveStyleData(
   totalConsumedTokens: number
 ): Promise<void> {
   const geminiCredits = Math.ceil(totalConsumedTokens / 1000);
-
-  console.log(`Credits to consumed: ${geminiCredits}`);
 
   const { data: profile } = await supabase.from('profiles').select('credits').eq('user_id', userId).single();
   if (profile.credits < geminiCredits) {

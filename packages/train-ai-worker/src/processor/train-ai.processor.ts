@@ -93,9 +93,11 @@ export class TrainAiProcessor extends WorkerHost {
 
       await job.updateProgress(100);
       this.logger.log(`Train AI completed for ${userId}, retraining: ${isRetraining}`);
-    } catch (error: any) {
-      await job.log(`Error: ${error.message}`);
-      this.logger.error(`Job ${job.id} failed: ${error.message}`, error.stack);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      await job.log(`Error: ${errorMessage}`);
+      this.logger.error(`Job ${job.id} failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }

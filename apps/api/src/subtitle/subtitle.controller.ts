@@ -2,8 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Res, UseGuards,
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SubtitleService } from './subtitle.service';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import type { AuthRequest } from '../common/interfaces/auth-request.interface';
 import {
   CreateSubtitleSchema,
   UpdateSubtitleSchema,
@@ -18,10 +19,6 @@ import type {
   UploadVideoInput,
   BurnSubtitleInput,
 } from '@repo/validation';
-
-interface AuthRequest extends Request {
-  user?: { id: string };
-}
 
 @Controller('subtitle')
 @UseGuards(SupabaseAuthGuard)
@@ -130,7 +127,6 @@ export class SubtitleController {
       res.setHeader('Content-Length', videoBuffer.length.toString());
       res.send(videoBuffer);
     } catch (error) {
-      console.error('Burn subtitle controller error:', error);
       if (!res.headersSent) {
         if (error instanceof BadRequestException) {
           res.status(400).json({ error: error.message });
