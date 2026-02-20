@@ -1,7 +1,7 @@
-"use client"; // Required for Framer Motion
+"use client";
 
 import Link from "next/link";
-import { motion } from "motion/react"; // Corrected import
+import { motion } from "motion/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -127,7 +127,7 @@ export function NewUserOnboarding({
                                                         {isAiTrained ? <Check className="h-5 w-5" /> : "2"}
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold">Train AI Model</p>
+                                                        <p className="font-semibold">AI Studio</p>
                                                         <p className="text-sm text-slate-500 dark:text-slate-400">Why? To create a personalized script generator.</p>
                                                     </div>
                                                 </div>
