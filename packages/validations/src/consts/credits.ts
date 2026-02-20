@@ -8,6 +8,7 @@ export const FeatureType = {
   COURSE_MODULE: 'course_module',
   DUBBING: 'dubbing',
   AI_TRAINING: 'ai_training',
+  STORY_BUILDER: 'story_builder',
 } as const;
 
 export type FeatureType = (typeof FeatureType)[keyof typeof FeatureType];
