@@ -116,28 +116,25 @@ async function updateUserProfile(
 async function processReferral(
   referralCode: string,
   userEmail: string,
-  origin: string
 ) {
   try {
-    const response = await fetch(`${origin}/api/track-referral`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const response = await fetch(`${backendUrl}/api/v1/referral/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        referralCode,
-        userEmail,
-      }),
+      body: JSON.stringify({ referralCode, userEmail }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(` Referral API returned ${response.status}:`, errorData);
+      console.error(`Referral API returned ${response.status}:`, errorData);
       return;
     }
 
     const result = await response.json();
     console.log(`Referral tracked for ${userEmail} with code: ${referralCode}`, result);
   } catch (error) {
-    console.error(' Error tracking referral:', error);
+    console.error('Error tracking referral:', error);
   }
 }
 
@@ -281,7 +278,7 @@ export async function GET(request: NextRequest) {
 
       // Track referral if code exists (for new signups via OAuth with ref parameter)
       if (referralCode) {
-        await processReferral(referralCode, user.email!, request.nextUrl.origin);
+        await processReferral(referralCode, user.email!);
       }
 
       // Complete any pending referral for this email

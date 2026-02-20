@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react"
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react"
 
 import ScriptGenerationStepper from "@/components/dashboard/scripts/ScriptGenerationStepper"
 import ThumbnailStep1 from "./ThumbnailStep1"
@@ -79,14 +79,6 @@ export function ThumbnailForm({
   return (
     <div className="relative space-y-6">
       <ScriptGenerationStepper steps={steps} currentStep={step} />
-
-      <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30 p-3 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-        <p className="text-sm text-purple-800 dark:text-purple-200">
-          Generating thumbnails will cost{" "}
-          <span className="font-semibold">1 credit per image</span> (3 total).
-        </p>
-      </div>
 
       <div className="relative h-[450px] overflow-y-auto">
         <AnimatePresence mode="wait">

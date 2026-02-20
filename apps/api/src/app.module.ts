@@ -14,6 +14,7 @@ import { SubtitleModule } from './subtitle/subtitle.module';
 import { DubbingModule } from './dubbing/dubbing.module';
 import { ThumbnailModule } from './thumbnail/thumbnail.module';
 import { StoryBuilderModule } from './story-builder/story-builder.module';
+import { ReferralModule } from './referral/referral.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { StoryBuilderModule } from './story-builder/story-builder.module';
     DubbingModule,
     ThumbnailModule,
     StoryBuilderModule,
+    ReferralModule,
   ],
   controllers: [AppController, HealthController, TrainAiController],
   providers: [],

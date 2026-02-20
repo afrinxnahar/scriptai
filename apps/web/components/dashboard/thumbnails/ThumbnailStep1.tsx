@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
+
 
 /**
  * @todo later on we'll fetch and show popular prompt examples from other user from DB
@@ -47,18 +47,18 @@ export default function ThumbnailStep1({
       <h3 className="text-xl font-semibold">Step 1: Describe your thumbnail</h3>
 
       <div className="space-y-2">
-        <Label>Quick start with a preset</Label>
-        <div className="flex flex-wrap gap-2">
+        <Label>Popular Templates</Label>
+        <div className="flex flex-col gap-2">
           {PRESET_PROMPTS.map((p) => (
-            <Button
+            <button
               key={p.label}
-              variant="outline"
-              size="sm"
+              type="button"
               onClick={() => onUsePreset(p.prompt)}
-              className="text-xs"
+              className="text-left rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
             >
-              {p.label}
-            </Button>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{p.label}</span>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{p.prompt}</p>
+            </button>
           ))}
         </div>
       </div>

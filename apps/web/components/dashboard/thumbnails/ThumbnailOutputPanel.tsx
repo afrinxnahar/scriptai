@@ -18,8 +18,10 @@ interface ThumbnailOutputPanelProps {
   progress: number
   statusMessage: string
   generatedImages: string[]
+  creditsConsumed?: number
   onRegenerate: () => void
   onDownload: (url: string, index: number) => void
+  onNewGeneration?: () => void
 }
 
 export function ThumbnailOutputPanel({
@@ -27,8 +29,10 @@ export function ThumbnailOutputPanel({
   progress,
   statusMessage,
   generatedImages,
+  creditsConsumed = 0,
   onRegenerate,
   onDownload,
+  onNewGeneration,
 }: ThumbnailOutputPanelProps) {
   const hasImages = generatedImages.length > 0
 
@@ -36,9 +40,6 @@ export function ThumbnailOutputPanel({
     <Card className="lg:sticky lg:top-8 lg:min-h-[600px]">
       <CardHeader>
         <CardTitle>Your Thumbnails</CardTitle>
-        <CardDescription>
-          Preview, download, or regenerate your AI thumbnails here.
-        </CardDescription>
       </CardHeader>
 
       <CardContent>

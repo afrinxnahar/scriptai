@@ -44,7 +44,11 @@ interface JobEvent {
   finished: boolean
 }
 
-export function useThumbnailGeneration() {
+interface UseThumbnailGenerationOptions {
+  onComplete?: (thumbnailJobId: string) => void
+}
+
+export function useThumbnailGeneration(options?: UseThumbnailGenerationOptions) {
   const { profile } = useSupabase()
 
   // Form state
@@ -61,9 +65,11 @@ export function useThumbnailGeneration() {
   const [progress, setProgress] = useState(0)
   const [statusMessage, setStatusMessage] = useState("")
   const [jobId, setJobId] = useState<string | null>(null)
+  const [thumbnailJobId, setThumbnailJobId] = useState<string | null>(null)
 
   // Results
   const [generatedImages, setGeneratedImages] = useState<string[]>([])
+  const [creditsConsumed, setCreditsConsumed] = useState(0)
   const [pastJobs, setPastJobs] = useState<ThumbnailJob[]>([])
   const [isLoadingJobs, setIsLoadingJobs] = useState(true)
 
@@ -95,6 +101,7 @@ export function useThumbnailGeneration() {
     setProgress(0)
     setStatusMessage("Queuing generation...")
     setGeneratedImages([])
+    setCreditsConsumed(0)
 
     try {
       const formData = new FormData()
@@ -113,6 +120,7 @@ export function useThumbnailGeneration() {
         { requireAuth: true },
       )
 
+      setThumbnailJobId(response.id)
       setJobId(response.jobId)
       toast.success("Generation started!")
     } catch (error: any) {
@@ -149,11 +157,15 @@ export function useThumbnailGeneration() {
 
           if (data.state === 'completed' && data.imageUrls) {
             setGeneratedImages(data.imageUrls)
+            setCreditsConsumed(data.imageUrls.length)
             setStatusMessage("Done!")
             toast.success("Thumbnails generated!", {
-              description: `${data.imageUrls.length} thumbnails ready`,
+              description: `${data.imageUrls.length} thumbnail${data.imageUrls.length > 1 ? 's' : ''} ready`,
             })
             fetchPastJobs()
+            if (thumbnailJobId && options?.onComplete) {
+              options.onComplete(thumbnailJobId)
+            }
           } else if (data.state === 'failed') {
             toast.error("Generation Failed", {
               description: data.error || "An unknown error occurred",
@@ -228,6 +240,8 @@ export function useThumbnailGeneration() {
     setGeneratedImages([])
   }
 
+  const showOutput = isGenerating || generatedImages.length > 0
+
   return {
     prompt, setPrompt,
     context, setContext,
@@ -238,7 +252,8 @@ export function useThumbnailGeneration() {
     faceImage, setFaceImage,
     isGenerating,
     progress, statusMessage,
-    generatedImages,
+    generatedImages, creditsConsumed,
+    showOutput,
     pastJobs, isLoadingJobs,
     handleGenerate, handleRegenerate,
     handleDownload, handleUsePreset, clearForm,

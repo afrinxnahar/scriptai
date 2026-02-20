@@ -19,6 +19,7 @@ import {
     CalendarDays,
     Loader2,
     Languages,
+    ImageIcon,
 } from "lucide-react";
 
 import {
@@ -46,7 +47,9 @@ interface ContentCardProps {
     onDelete: () => Promise<void>;
     onExport?: (scriptId: string) => Promise<void>;
     setToDelete: (id: string | null) => void;
-    type: "scripts" | "research" | "dubbing";
+    type: "scripts" | "research" | "dubbing" | "thumbnails";
+    imagePreview?: string;
+    statusBadge?: React.ReactNode;
 }
 
 export function ContentCard({
@@ -57,6 +60,8 @@ export function ContentCard({
     onExport,
     setToDelete,
     type,
+    imagePreview,
+    statusBadge,
 }: ContentCardProps) {
     const [isExporting, setIsExporting] = useState(false);
 
@@ -64,13 +69,15 @@ export function ContentCard({
 
     // Dynamic values based on type
     const linkHref = `/dashboard/${type}/${id}`;
-    const Icon = type === "scripts" ? FileText : type === "dubbing" ? Languages : BookOpen;
-    const deleteLabel = type === "scripts" ? "Delete Script" : type === "dubbing" ? "Delete Dubbing" : "Delete Research";
+    const Icon = type === "scripts" ? FileText : type === "dubbing" ? Languages : type === "thumbnails" ? ImageIcon : BookOpen;
+    const deleteLabel = type === "scripts" ? "Delete Script" : type === "dubbing" ? "Delete Dubbing" : type === "thumbnails" ? "Delete Thumbnail" : "Delete Research";
     const dialogDescription = type === "scripts"
         ? "This will permanently delete your script and all its associated data."
         : type === "dubbing"
             ? "This will permanently delete your dubbed media and all its associated data."
-            : "This will permanently delete your research and all its associated data.";
+            : type === "thumbnails"
+                ? "This will permanently delete this thumbnail job and all its generated images."
+                : "This will permanently delete your research and all its associated data.";
 
 
     const handleExport = () => {
@@ -103,17 +110,27 @@ export function ContentCard({
                 <Link href={linkHref} passHref legacyBehavior>
                     <a className="block cursor-pointer p-5">
                         <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                                <Icon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                            </div>
+                            {imagePreview ? (
+                                <img
+                                    src={imagePreview}
+                                    alt={title}
+                                    className="h-14 w-14 shrink-0 rounded-lg object-cover border"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+                                    <Icon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                </div>
+                            )}
 
-                            <div className="flex-grow">
-                                <h3 className="md:font-semibold md:text-lg text-slate-800 dark:text-slate-100 md:leading-tight text-base font-medium">
+                            <div className="flex-grow min-w-0">
+                                <h3 className="md:font-semibold md:text-lg text-slate-800 dark:text-slate-100 md:leading-tight text-base font-medium truncate">
                                     {title}
                                 </h3>
-                                <div className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                                <div className="mt-1.5 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                                     <CalendarDays className="h-4 w-4" />
                                     <span>{creationDate}</span>
+                                    {statusBadge}
                                 </div>
                             </div>
                         </div>

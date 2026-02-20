@@ -6,7 +6,6 @@ import type { ThumbnailRatio } from '@repo/validation';
 import { GoogleGenAI } from '@google/genai';
 
 const BUCKET = 'thumbnails';
-const CREDITS_PER_THUMBNAIL = 1;
 const MODEL = 'gemini-2.5-flash-image';
 
 interface ThumbnailJobData {
@@ -51,15 +50,12 @@ export class ThumbnailProcessor extends WorkerHost {
       generateCount, referenceImageUrl, faceImageUrl, videoLink, personalized,
     } = job.data;
 
-    console.log(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-
     await job.updateProgress(0);
     await job.log('Starting thumbnail generation...');
 
     try {
       await this.updateJob(thumbnailJobId, { status: 'processing' });
 
-      // Build reusable context parts
       await job.updateProgress(5);
       const contextParts: any[] = [];
 
@@ -84,67 +80,110 @@ export class ThumbnailProcessor extends WorkerHost {
 
       await job.updateProgress(15);
 
-      const videoContext = videoLink ? `\nThis thumbnail is for a YouTube video: ${videoLink}. Reflect the video's themes.` : '';
+      const videoContext = videoLink
+        ? `\nThis thumbnail is for a YouTube video: ${videoLink}. Reflect the video's themes.`
+        : '';
 
-      await job.log('Generating thumbnail...');
+      const count = Math.min(generateCount || 3, 4);
+      await job.log(`Generating ${count} thumbnail variations in parallel...`);
 
-      const textPrompt = `Expert YouTube thumbnail designer. Generate ONE high-quality thumbnail image.
+      const variationHints = [
+        'Use bold close-up framing with dramatic lighting.',
+        'Use a wider composition with dynamic angles and depth.',
+        'Use a minimalist layout with strong typography and contrast.',
+        'Use an energetic composition with vibrant split-tone colors.',
+      ];
 
-Aspect ratio: ${ratio}. Optimized for YouTube click-through rate.
+      const generateOne = async (index: number): Promise<{ url: string; tokens: number } | null> => {
+        const hint = variationHints[index % variationHints.length];
+        const textPrompt = `Expert YouTube thumbnail designer. Generate ONE high-quality, unique thumbnail image.
+
+The image MUST be in ${ratio} aspect ratio (${this.ratioDimensions(ratio)}). This is critical — do not deviate.
+Optimized for YouTube click-through rate.
 Bold vibrant colors, dramatic composition, high contrast, cinematic lighting.
+Variation directive: ${hint}
 ${videoContext}
 
 ${prompt}`;
 
-      const parts: any[] = [{ text: textPrompt }, ...contextParts];
+        const parts: any[] = [{ text: textPrompt }, ...contextParts];
 
-      const result: any = await this.genAI.models.generateContent({
-        model: MODEL,
-        contents: [{ role: 'user', parts }],
-        config: { responseModalities: ['TEXT', 'IMAGE'] },
-      });
+        const result: any = await this.genAI.models.generateContent({
+          model: MODEL,
+          contents: [{ role: 'user', parts }],
+          config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            ...(({ imageConfig: { aspectRatio: ratio } }) as any),
+          },
+        });
 
-      await job.updateProgress(70);
+        const tokens: number = result?.usageMetadata?.totalTokenCount ?? 0;
 
-      const imageData = result?.candidates?.[0]?.content?.parts
-        ?.find((p: any) => p.inlineData?.data);
+        const imageData = result?.candidates?.[0]?.content?.parts
+          ?.find((p: any) => p.inlineData?.data);
 
-      if (!imageData) throw new Error('Gemini returned no image');
+        if (!imageData) return null;
 
-      const { data: b64, mimeType } = imageData.inlineData;
-      const buffer = Buffer.from(b64, 'base64');
-      const ext = mimeType?.includes('png') ? 'png' : 'jpg';
-      const storagePath = `${userId}/jobs/${bullJobId}/generated/thumb_0.${ext}`;
+        const { data: b64, mimeType } = imageData.inlineData;
+        const buffer = Buffer.from(b64, 'base64');
+        const ext = mimeType?.includes('png') ? 'png' : 'jpg';
+        const storagePath = `${userId}/jobs/${bullJobId}/generated/thumb_${index}.${ext}`;
 
-      const { error: uploadError } = await this.supabase.storage
-        .from(BUCKET)
-        .upload(storagePath, buffer, { contentType: mimeType || 'image/png' });
+        const { error: uploadError } = await this.supabase.storage
+          .from(BUCKET)
+          .upload(storagePath, buffer, { contentType: mimeType || 'image/png' });
 
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+        if (uploadError) {
+          this.logger.warn(`Upload failed for variation ${index}: ${uploadError.message}`);
+          return null;
+        }
 
-      const { data: { publicUrl } } = this.supabase.storage.from(BUCKET).getPublicUrl(storagePath);
-      const imageUrls = [publicUrl];
+        const { data: { publicUrl } } = this.supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+        return { url: publicUrl, tokens };
+      };
 
-      // TODO: implement multi-image generation (loop generateCount times with variation hints)
+      const results = await Promise.allSettled(
+        Array.from({ length: count }, (_, i) => generateOne(i)),
+      );
+
+      const succeeded = results
+        .filter((r): r is PromiseFulfilledResult<{ url: string; tokens: number } | null> => r.status === 'fulfilled')
+        .map(r => r.value)
+        .filter((v): v is { url: string; tokens: number } => v !== null);
+
+      const imageUrls = succeeded.map(s => s.url);
+      const totalConsumedTokens = succeeded.reduce((sum, s) => sum + s.tokens, 0);
+
+      if (imageUrls.length === 0) throw new Error('All thumbnail variations failed to generate');
 
       await job.updateProgress(90);
-      await job.log('Saving results...');
+      await job.log(`${imageUrls.length}/${count} thumbnails generated. Saving...`);
 
       await this.updateJob(thumbnailJobId, { status: 'completed', image_urls: imageUrls });
 
-      const creditsToDeduct = imageUrls.length * CREDITS_PER_THUMBNAIL;
-      const { error: creditError } = await this.supabase.rpc('update_user_credits', {
-        user_uuid: userId,
-        credit_change: -creditsToDeduct,
-      });
+      const creditsToDeduct = Math.ceil(totalConsumedTokens / 1000);
 
-      if (creditError) {
-        this.logger.error(`Credit deduction failed for ${userId}: ${creditError.message}`);
+      const { data: profile } = await this.supabase
+        .from('profiles')
+        .select('credits')
+        .eq('user_id', userId)
+        .single();
+
+      if (!profile || profile.credits < creditsToDeduct) {
+        throw new Error('Insufficient credits, Please upgrade your plan.');
       }
 
-      await this.updateJob(thumbnailJobId, { credits_consumed: creditsToDeduct });
+      await this.supabase
+        .from('profiles')
+        .update({ credits: profile.credits - creditsToDeduct })
+        .eq('user_id', userId);
+
+      await this.updateJob(thumbnailJobId, {
+        credits_consumed: creditsToDeduct,
+        total_tokens: totalConsumedTokens,
+      });
       await job.updateProgress(100);
-      await job.log(`Done! ${imageUrls.length} thumbnails, ${creditsToDeduct} credits deducted.`);
+      await job.log(`Done! ${imageUrls.length} thumbnails, ${totalConsumedTokens} tokens consumed, ${creditsToDeduct} credits deducted.`);
 
       return { imageUrls };
     } catch (error: any) {
@@ -208,6 +247,16 @@ ${prompt}`;
     } catch {
       return null;
     }
+  }
+
+  private ratioDimensions(ratio: ThumbnailRatio): string {
+    const map: Record<ThumbnailRatio, string> = {
+      '16:9': 'wide landscape, e.g. 1280×720',
+      '9:16': 'tall portrait, e.g. 720×1280',
+      '1:1': 'square, e.g. 1024×1024',
+      '4:3': 'landscape, e.g. 1024×768',
+    };
+    return map[ratio] || 'landscape';
   }
 
   private async updateJob(jobId: string, fields: Record<string, any>) {
