@@ -1,28 +1,49 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { getSupabaseServer } from "@/lib/supabase/server"
+
+const COURSE_MODULE_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string', description: 'Course title' },
+    description: { type: 'string', description: 'Course description' },
+    videoCount: { type: 'integer', description: 'Number of videos in the course' },
+    difficulty: { type: 'string', description: 'Difficulty level' },
+    estimatedDuration: { type: 'string', description: 'Total estimated duration' },
+    videos: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', description: 'Video sequence number' },
+          title: { type: 'string', description: 'Video title' },
+          duration: { type: 'string', description: 'Estimated duration' },
+          description: { type: 'string', description: 'Video description' },
+          script: { type: 'string', description: 'Full script outline' },
+        },
+        required: ['id', 'title', 'duration', 'description', 'script'],
+      },
+      minItems: 1,
+    },
+  },
+  required: ['title', 'description', 'videoCount', 'difficulty', 'estimatedDuration', 'videos'],
+} as const;
 
 export async function POST(req: Request) {
   try {
-    // Check if OpenAI API key is available on the server
-    if (!process.env.OPENAI_API_KEY) {
-      console.error("OpenAI API key is not configured")
-      return NextResponse.json({ error: "OpenAI API key is not configured" }, { status: 500 })
-    }
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      console.error("Google Generative AI API key is not configured")
+      return NextResponse.json({ error: "API key is not configured" }, { status: 500 })
+    };
 
     const { topic, description, difficulty, videoCount, references } = await req.json()
 
-    // Validate inputs
     if (!topic) {
       return NextResponse.json({ error: "Topic is required" }, { status: 400 })
     }
 
-    // Create Supabase client
-    const cookieStore = cookies()
     const supabase = await getSupabaseServer()
 
-    // Get user session
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -31,23 +52,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user has enough credits
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("credits")
       .eq("user_id", session.user.id)
-      .single()
+      .single();
 
     if (profileError) {
-      return NextResponse.json({ error: "Failed to fetch user profile" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch user profile" }, { status: 500 });
     }
 
     if (profileData.credits < 2) {
-      // Course modules cost 2 credits
-      return NextResponse.json({ error: "Insufficient credits. Course modules require 2 credits." }, { status: 403 })
+      return NextResponse.json({ error: "Insufficient credits. Course modules require 2 credits." }, { status: 403 });
     }
 
-    // Generate course module using OpenAI
     const prompt = `
       Create a detailed course module outline for a YouTube course on "${topic}".
       
@@ -62,43 +80,31 @@ export async function POST(req: Request) {
       2. Duration (estimated)
       3. Brief description
       4. A complete script outline with sections for intro, main content, key points, and conclusion
-      
-      Format the response as a JSON object with the following structure:
-      {
-        "title": "Course title",
-        "description": "Course description",
-        "videoCount": number,
-        "difficulty": "difficulty level",
-        "estimatedDuration": "total duration",
-        "videos": [
-          {
-            "id": 1,
-            "title": "Video title",
-            "duration": "estimated duration",
-            "description": "video description",
-            "script": "full script outline"
-          },
-          ...
-        ]
-      }
-    `
+    `;
+
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY! });
 
-    const courseModuleJson: any = await ai.models.generateContent({
+    const result: any = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt || '',
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: 'application/json',
+        responseJsonSchema: COURSE_MODULE_SCHEMA,
+      },
     });
 
+    const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? result?.text;
+    if (!rawText) {
+      return NextResponse.json({ error: "AI returned an empty response" }, { status: 500 })
+    }
 
-    // Parse the JSON response
-    let courseModule
+    let courseModule;
     try {
-      courseModule = JSON.parse(courseModuleJson)
-    } catch (error) {
+      courseModule = JSON.parse(rawText)
+    } catch {
       return NextResponse.json({ error: "Failed to parse course module data" }, { status: 500 })
     }
 
-    // Update user credits
     await supabase
       .from("profiles")
       .update({ credits: profileData.credits - 2 })

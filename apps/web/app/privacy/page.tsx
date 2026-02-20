@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Lenis from 'lenis'
-import { cn } from "@/lib/utils"; // Make sure you have this utility
-import Footer from "@/components/footer";
-import { ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils"
+import Footer from "@/components/footer"
+import { ArrowLeft } from "lucide-react"
 import { useRouter } from 'next/navigation'
 
 // Define sections for the Table of Contents
@@ -28,18 +28,20 @@ const PrivacyAndTerms = () => {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<string>("overview");
 
-  // Lenis Smooth Scroll Effect with proper cleanup
+  const rafIdRef = useRef<number>(0);
+
   useEffect(() => {
     const lenis = new Lenis();
 
     function raf(time: number) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      rafIdRef.current = requestAnimationFrame(raf);
     }
 
-    requestAnimationFrame(raf);
+    rafIdRef.current = requestAnimationFrame(raf);
 
     return () => {
+      cancelAnimationFrame(rafIdRef.current);
       lenis.destroy();
     }
   }, []);
@@ -110,7 +112,7 @@ const PrivacyAndTerms = () => {
             <PolicySection id="overview" title="1. Overview">
               <p>
                 Script AI is an AI-powered assistant that helps content creators generate high-quality
-                YouTube scripts, titles, thumbnails, and course modules. By using our service, you agree
+                YouTube scripts, titles, thumbnails, and courses. By using our service, you agree
                 to the following privacy and usage terms.
               </p>
             </PolicySection>

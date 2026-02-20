@@ -69,8 +69,8 @@ export function ContentCard({
     const dialogDescription = type === "scripts"
         ? "This will permanently delete your script and all its associated data."
         : type === "dubbing"
-        ? "This will permanently delete your dubbed media and all its associated data."
-        : "This will permanently delete your research and all its associated data.";
+            ? "This will permanently delete your dubbed media and all its associated data."
+            : "This will permanently delete your research and all its associated data.";
 
 
     const handleExport = () => {

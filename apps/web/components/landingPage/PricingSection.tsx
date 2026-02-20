@@ -13,7 +13,7 @@ export default function PricingSection() {
             "Script generation",
             "Thumbnail generation",
             "Subtitle generation",
-            "Course module creation",
+            "Course Builder",
         ],
         proExtras: [
             "Everything in Starter",

@@ -40,10 +40,10 @@ export default function FeatureSection() {
                 "Generate scripts in multiple languages to reach a global audience.",
         },
         {
-            title: "Tutorial Course Module",
+            title: "Course Builder",
             icon: BookOpen,
             description:
-                "Break down complex topics into structured course modules with suggested video counts and topics.",
+                "Break down complex topics into structured courses with suggested video counts and topics.",
         },
         {
             title: "Referral Program",

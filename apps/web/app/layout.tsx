@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/sonner"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SupabaseProvider } from "@/components/supabase-provider"
 import { Analytics } from "@vercel/analytics/next"
-import { IconBugFilled } from "@tabler/icons-react"
 
 const inter = Inter({ subsets: ["latin"] })
 

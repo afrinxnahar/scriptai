@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Search, Plus } from "lucide-react";
@@ -13,6 +12,7 @@ import { EmptySvg } from "@/components/dashboard/common/EmptySvg";
 import { motion } from "motion/react";
 import { useSupabase } from "@/components/supabase-provider";
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired";
+import { Card } from "@/components/ui/card";
 
 interface ResearchTopic {
   id: string;
@@ -66,9 +66,10 @@ export default function Topics() {
 
         const data = await response.json();
         setTopics(data || []);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An unexpected error occurred"
         toast.error("Error fetching topics", {
-          description: error.message,
+          description: message,
         });
       } finally {
         setLoading(false);
@@ -98,9 +99,10 @@ export default function Topics() {
       toast.success("Topic deleted", {
         description: "Your topic has been deleted successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred"
       toast.error("Error deleting topic", {
-        description: error.message,
+        description: message,
       });
     } finally {
       setTopicToDelete(null);
@@ -133,9 +135,10 @@ export default function Topics() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred"
       toast.error("Error exporting topic", {
-        description: error.message,
+        description: message,
       });
     }
   };
@@ -146,7 +149,7 @@ export default function Topics() {
     )
   }
 
-  const showTrainingOverlay = !profile?.ai_trained || !profile?.youtube_connected && !loading;
+  const showTrainingOverlay = !profile?.ai_trained || (!profile?.youtube_connected && !loading);
 
   return (
     <div className="container py-8 md:py-12">

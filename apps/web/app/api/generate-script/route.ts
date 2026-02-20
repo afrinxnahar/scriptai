@@ -2,13 +2,21 @@
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
-import { parseScriptResponse } from "@/lib/parseResponse";
 
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 
 type Part = { text: string } | { fileData: { fileUri: string; mimeType: string } };
+
+const SCRIPT_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string', description: 'Suggested script title' },
+    script: { type: 'string', description: 'Full script as a string' },
+  },
+  required: ['title', 'script'],
+} as const;
 
 interface ScriptRequest {
   prompt: string;
@@ -187,11 +195,7 @@ Creator's Style Profile:
 - Recommendations: ${JSON.stringify(styleData.recommendations)}
 ` : ''}
 
-Return the output as valid JSON with no additional text, comments, markdown or formatting. The JSON should have the following structure:
-{
-  "title": "Suggested script title",
-  "script": "Full script as a string text here"
-}
+Generate a compelling, engaging title and a complete script. Use Creator's style profile for more personalizzed experience.
 `;
 
     const uploadedFiles: any[] = [];
@@ -227,23 +231,31 @@ Return the output as valid JSON with no additional text, comments, markdown or f
     }
     // console.log(parts);
 
-    // Generate script with Gemini
     let result: any;
     try {
       result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        // contents: geminiPrompt,
         contents: [{ role: "user", parts }],
+        config: {
+          responseMimeType: 'application/json',
+          responseJsonSchema: SCRIPT_RESPONSE_SCHEMA,
+        },
       });
     } catch (geminiError) {
       console.error('Gemini API error:', geminiError);
       return NextResponse.json({ error: 'Failed to generate script from Gemini API' }, { status: 500 });
     }
 
-    // Parse the response
-    const response = parseScriptResponse(result.text);
-    if (!response) {
-      console.error('Invalid Gemini response format:', result.text);
+    const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? result?.text;
+    if (!rawText) {
+      return NextResponse.json({ error: 'AI returned an empty response' }, { status: 500 });
+    }
+
+    let response: { title: string; script: string };
+    try {
+      response = JSON.parse(rawText);
+    } catch {
+      console.error('Invalid Gemini response format:', rawText);
       return NextResponse.json({ error: 'Failed to parse Gemini response' }, { status: 500 });
     }
 

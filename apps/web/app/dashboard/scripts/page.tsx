@@ -34,13 +34,11 @@ const emptyStateVariants = {
 }
 
 export default function Scripts() {
-    const { profile, profileLoading, session } = useSupabase()
+    const { profile, profileLoading } = useSupabase()
     const [scripts, setScripts] = useState<Script[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [scriptToDelete, setScriptToDelete] = useState<string | null>(null)
-
-    console.log("User session:", session)
 
     useEffect(() => {
         const fetchScripts = async () => {
@@ -94,9 +92,10 @@ export default function Scripts() {
             a.click()
             document.body.removeChild(a)
             URL.revokeObjectURL(url) // Clean up the object URL
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred"
             toast.error("Error exporting script", {
-                description: error.message,
+                description: message,
             })
         }
     }
