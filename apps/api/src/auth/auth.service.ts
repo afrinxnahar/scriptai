@@ -37,7 +37,7 @@ export class AuthService {
 
     try {
       await this.resend.emails.send({
-        from: 'Script AI <no-reply@tryscriptai.com>',
+        from: 'Creator AI <no-reply@tryscriptai.com>',
         to: email,
         subject: 'Your Password Reset Code',
         html,
