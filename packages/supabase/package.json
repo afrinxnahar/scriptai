@@ -21,7 +21,6 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "prepare": "tsup",
     "supabase:dev": "pnpx supabase start",
     "supabase:init": "pnpx supabase init",
     "supabase:link": "pnpx supabase link --project-ref <your-project-ID>",
