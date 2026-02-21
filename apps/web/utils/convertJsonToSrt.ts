@@ -1,4 +1,4 @@
-import { SubtitleLine } from "../../../packages/validations/src/types/SubtitleTypes";
+import type { SubtitleLine } from "@repo/validation";
 
 export function convertJsonToSrt(subtitles: SubtitleLine[]): string {
     if (!subtitles || !Array.isArray(subtitles) || subtitles.length === 0) {
