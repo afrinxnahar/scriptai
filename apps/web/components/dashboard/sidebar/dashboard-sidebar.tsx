@@ -11,6 +11,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useMobile } from "@/hooks/use-mobile"
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar"
+import { Lock } from "lucide-react"
 
 import logo from "@/public/dark-logo.png"
 import HomeIcon from "./icons/HomeIcon"
@@ -21,13 +22,15 @@ import ImageIcon from "./icons/ImageIcon"
 import MessageSquareIcon from "./icons/MessageSquareIcon"
 import BookOpenIcon from "./icons/BookopenIcon"
 import MicIcon from "./icons/MicIcon"
-import { Clapperboard } from "lucide-react"
+import { Clapperboard, Video } from "lucide-react"
 
 interface NavLink {
   label: string
   icon: React.ReactNode
   variant: "default" | "ghost"
   href: string
+  badge?: string
+  locked?: boolean
 }
 
 interface NavProps {
@@ -53,7 +56,7 @@ export const Logo = ({
   >
     <Image
       src={logo}
-      alt="Script AI Logo"
+      alt="Creator AI Logo"
       width={28}
       height={28}
       className="shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm"
@@ -69,7 +72,7 @@ export const Logo = ({
           transition={{ duration: 0.2, ease: "easeInOut" }}
           className="whitespace-nowrap overflow-hidden"
         >
-          Script AI
+          Creator AI
         </motion.span>
       )}
     </AnimatePresence>
@@ -87,23 +90,34 @@ export function Nav({ links, isCollapsed, onLinkClick }: NavProps) {
       <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         {links?.map((link, index) => {
           const isActive = pathname === link.href
+          const Comp = link.locked ? "div" : Link
           return (
-            <Link
+            <Comp
               key={index}
-              href={link.href}
-              onClick={onLinkClick}
+              {...(!link.locked && { href: link.href, onClick: onLinkClick })}
               className={cn(
                 "flex items-center gap-2 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 transition-all hover:text-slate-900 dark:hover:text-white",
                 isActive
                   ? "bg-slate-100 dark:bg-slate-800 font-medium text-slate-900 dark:text-white"
                   : "hover:bg-slate-100 dark:hover:bg-slate-800",
-                isCollapsed && "h-9 w-9 justify-center px-2"
+                isCollapsed && "h-9 w-9 justify-center px-2",
+                link.locked && "opacity-50 cursor-not-allowed pointer-events-none"
               )}
               title={isCollapsed ? link.label : undefined}
             >
               {link.icon}
-              {!isCollapsed && <span>{link.label}</span>}
-            </Link>
+              {!isCollapsed && (
+                <span className="flex items-center gap-2">
+                  {link.label}
+                  {link.badge && (
+                    <span className="text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.5 rounded-full leading-none">
+                      {link.badge}
+                    </span>
+                  )}
+                  {link.locked && <Lock className="h-3 w-3 text-gray-400" />}
+                </span>
+              )}
+            </Comp>
           )
         })}
       </nav>
@@ -123,12 +137,13 @@ export function DashboardSidebar({ collapsed, setCollapsed }: DashboardSidebarPr
   const links: ReadonlyArray<NavLink> = [
     { label: "Dashboard", icon: <HomeIcon className="h-4 w-4" />, variant: "default", href: "/dashboard" },
     { label: "AI Studio", icon: <SparklesIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/train" },
-    { label: "Idea Research", icon: <SearchIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/research" },
+    { label: "Ideation", icon: <SearchIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/research" },
     { label: "Scripts", icon: <FileTextIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/scripts" },
     { label: "Thumbnails", icon: <ImageIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/thumbnails" },
     { label: "Subtitles", icon: <MessageSquareIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/subtitles" },
-    { label: "Course Builder", icon: <BookOpenIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/courses" },
-    { label: "Audio Track", icon: <MicIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/dubbing" },
+    { label: "Video Generation", icon: <Video className="h-4 w-4" />, variant: "ghost", href: "/dashboard/video-generation", badge: "Soon", locked: true },
+    { label: "Course Builder", icon: <BookOpenIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/courses", badge: "Soon", locked: true },
+    { label: "Audio Dubbing", icon: <MicIcon className="h-4 w-4" />, variant: "ghost", href: "/dashboard/dubbing", badge: "Soon", locked: true },
     { label: "Story Builder", icon: <Clapperboard className="h-4 w-4" />, variant: "ghost", href: "/dashboard/story-builder" }
   ]
 

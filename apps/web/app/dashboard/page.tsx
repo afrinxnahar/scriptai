@@ -7,34 +7,59 @@ import { NewUserOnboarding } from "@/components/dashboard/main/NewUserOnboarding
 import { ReturningUserHub } from "@/components/dashboard/main/ReturningUserHub"
 import { DashboardSkeleton } from "@/components/dashboard/main/skeleton/DashboardSkeleton";
 import { connectYoutubeChannel, isGoogleProvider } from "@/lib/connectYT"
-import { getScripts, Script } from "@/lib/api/getScripts"
+import { getScripts, type Script } from "@/lib/api/getScripts"
+import { getThumbnails, type ThumbnailJob } from "@/lib/api/getThumbnails"
+import { getDubbings, type DubbingProject } from "@/lib/api/getDubbings"
+import { api } from "@/lib/api-client"
 import { GmailPromptDialog } from "@/components/dashboard/gmail-prompt-dialog"
+import type { IdeationJob, SubtitleResponse } from "@repo/validation"
 
+export interface DashboardData {
+  scripts: Script[];
+  thumbnails: ThumbnailJob[];
+  dubbings: DubbingProject[];
+  ideations: IdeationJob[];
+  subtitles: SubtitleResponse[];
+}
 
 export default function Dashboard() {
   const { supabase, user, profile, fetchUserProfile } = useSupabase();
 
-  const [recentScripts, setRecentScripts] = useState<Script[]>([]);
-  const [isLoadingScripts, setIsLoadingScripts] = useState(true);
+  const [data, setData] = useState<DashboardData>({
+    scripts: [], thumbnails: [], dubbings: [], ideations: [], subtitles: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [isConnectingYoutube, setIsConnectingYoutube] = useState(false);
   const [isDisconnectingYoutube, setIsDisconnectingYoutube] = useState(false);
   const [showGmailDialog, setShowGmailDialog] = useState(false);
 
-  // Fetch scripts on component mount
   useEffect(() => {
-    const fetchScripts = async () => {
-      setIsLoadingScripts(true)
+    const fetchAll = async () => {
+      setIsLoading(true)
       try {
-        const scripts = await getScripts()
-        setRecentScripts(scripts)
+        const [scripts, thumbnails, dubbings, ideationRes, subtitles] = await Promise.allSettled([
+          getScripts(),
+          getThumbnails(),
+          getDubbings(),
+          api.get<{ data: IdeationJob[] }>("/api/v1/ideation?limit=50", { requireAuth: true }),
+          api.get<SubtitleResponse[]>("/api/v1/subtitle", { requireAuth: true }),
+        ])
+
+        setData({
+          scripts: scripts.status === "fulfilled" ? scripts.value : [],
+          thumbnails: thumbnails.status === "fulfilled" ? thumbnails.value : [],
+          dubbings: dubbings.status === "fulfilled" ? dubbings.value : [],
+          ideations: ideationRes.status === "fulfilled" ? (ideationRes.value?.data ?? []) : [],
+          subtitles: subtitles.status === "fulfilled" ? (subtitles.value ?? []) : [],
+        })
       } catch {
-        toast.error("Failed to load scripts")
+        toast.error("Failed to load dashboard data")
       } finally {
-        setIsLoadingScripts(false)
+        setIsLoading(false)
       }
     }
 
-    fetchScripts()
+    fetchAll()
   }, [])
 
   const handleConnectYoutube = () => {
@@ -43,21 +68,12 @@ export default function Dashboard() {
       setShowGmailDialog(true)
       return
     }
-    connectYoutubeChannel({
-      supabase,
-      user,
-      setIsConnectingYoutube,
-    })
+    connectYoutubeChannel({ supabase, user, setIsConnectingYoutube })
   }
 
   const handleGmailSubmit = (gmail: string) => {
     setShowGmailDialog(false)
-    connectYoutubeChannel({
-      supabase,
-      user,
-      setIsConnectingYoutube,
-      loginHint: gmail,
-    })
+    connectYoutubeChannel({ supabase, user, setIsConnectingYoutube, loginHint: gmail })
   }
 
   const handleDisconnectYoutube = async () => {
@@ -71,7 +87,6 @@ export default function Dashboard() {
         .single()
 
       if (error) throw error
-
       toast.success("YouTube channel disconnected successfully.")
       await fetchUserProfile(user.id)
     } catch (error: unknown) {
@@ -82,7 +97,7 @@ export default function Dashboard() {
     }
   }
 
-  if (!profile || isLoadingScripts) {
+  if (!profile || isLoading) {
     return (
       <div className="container py-8">
         <DashboardSkeleton />
@@ -94,16 +109,10 @@ export default function Dashboard() {
 
   return (
     <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome, {profile.full_name || "Creator"}
-        </h1>
-      </div>
-
       {isSetupComplete ? (
         <ReturningUserHub
           profile={profile}
-          recentScripts={recentScripts}
+          data={data}
           disconnectYoutubeChannel={handleDisconnectYoutube}
           disconnectingYoutube={isDisconnectingYoutube}
         />

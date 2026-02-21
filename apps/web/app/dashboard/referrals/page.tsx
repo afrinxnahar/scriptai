@@ -136,8 +136,8 @@ export default function Referrals() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join Script AI",
-          text: "Check out Script AI - an AI assistant for YouTubers. Use my referral link to get started:",
+          title: "Join Creator AI",
+          text: "Check out Creator AI - an AI assistant for YouTubers. Use my referral link to get started:",
           url: referralLink,
         });
       } catch (error) {
