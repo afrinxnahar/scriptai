@@ -1,4 +1,9 @@
- export const supportedLanguages = [
+interface Language {
+  code: string
+  name: string
+}
+
+export const supportedLanguages: Language[] = [
     { code: "ar", name: "العربية (Arabic)" },
     { code: "bn", name: "বাংলা (Bengali)" },
     { code: "zh", name: "中文 (Chinese)" },

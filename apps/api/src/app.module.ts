@@ -5,7 +5,6 @@ import * as path from 'path';
 import redisConfig from './config/redis.config';
 import { SupabaseModule } from './supabase/supabase.module';
 
-import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { HealthController } from './health.controller';
 import { TrainAiController } from './train-ai/train-ai.controller';
@@ -13,6 +12,9 @@ import { TrainAiModule } from './train-ai/train-ai.module';
 import { AuthModule } from './auth/auth.module';
 import { SubtitleModule } from './subtitle/subtitle.module';
 import { DubbingModule } from './dubbing/dubbing.module';
+import { ThumbnailModule } from './thumbnail/thumbnail.module';
+import { StoryBuilderModule } from './story-builder/story-builder.module';
+import { ReferralModule } from './referral/referral.module';
 
 @Module({
   imports: [
@@ -47,10 +49,12 @@ import { DubbingModule } from './dubbing/dubbing.module';
     TrainAiModule,
     AuthModule,
     SubtitleModule,
-    AuthModule,
-    DubbingModule
+    DubbingModule,
+    ThumbnailModule,
+    StoryBuilderModule,
+    ReferralModule,
   ],
   controllers: [AppController, HealthController, TrainAiController],
-  providers: [AppService],
+  providers: [],
 })
-export class AppModule { }
+export class AppModule {}

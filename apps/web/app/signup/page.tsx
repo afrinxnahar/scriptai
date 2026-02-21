@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useSupabase } from "@/components/supabase-provider";
 import { registerUserSchema } from "@repo/validation";
+import { api } from "@/lib/api-client";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { motion, AnimatePresence } from "motion/react";
 import logo from "@/public/dark-logo.png";
@@ -51,55 +52,16 @@ function SignupForm() {
   const trackReferral = async (userEmail: string | undefined) => {
     if (referralCode && userEmail) {
       try {
-        const response = await fetch("/api/track-referral", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            referralCode,
-            userEmail
-          }),
+        await api.post("/api/v1/referral/track", { referralCode, userEmail });
+        toast.success("Referral tracked!", {
+          description: "You've been referred to Script AI! Welcome!",
         });
-
-        if (response.ok) {
-          toast.success("Referral tracked!", {
-            description: "You've been referred to Script AI! Welcome!",
-          });
-          setShowReferralBanner(false);
-        }
+        setShowReferralBanner(false);
       } catch (err) {
         console.error("Error tracking referral:", err);
       }
     }
   };
-
-  // useEffect(() => {
-  //   const trackReferral = async () => {
-  //     if (referralCode && user?.email) {
-  //       console.log("inside useEffect")
-  //       try {
-  //         const response = await fetch("/api/track-referral", {
-  //           method: "POST",
-  //           headers: { "Content-Type": "application/json" },
-  //           body: JSON.stringify({
-  //             referralCode,
-  //             userEmail: user.email,
-  //           }),
-  //         });
-
-  //         if (response.ok) {
-  //           toast.success("Referral tracked!", {
-  //             description: "You've been referred to Script AI! Welcome!",
-  //           });
-  //           setShowReferralBanner(false);
-  //         }
-  //       } catch (err) {
-  //         console.error("Error tracking referral:", err);
-  //       }
-  //     }
-  //   };
-
-  //   trackReferral();
-  // }, [user, referralCode]);
 
   useEffect(() => {
     if (user) {

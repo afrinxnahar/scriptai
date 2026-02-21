@@ -101,11 +101,12 @@ export function useAITraining() {
       const data = await response.json();
       newVideos[index] = { ...newVideos[index], ...data, status: 'loaded' };
       setVideos(newVideos);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (!newVideos[index]) return;
       newVideos[index].status = 'error';
       setVideos([...newVideos]);
-      toast.error(error.message || "Invalid YouTube URL.");
+      const message = error instanceof Error ? error.message : "Invalid YouTube URL."
+      toast.error(message);
     }
   };
 
@@ -153,7 +154,7 @@ export function useAITraining() {
 
       setJobId(jobId);
       toast.success("Training started! Analyzing your videos...");
-    } catch (error: any) {
+    } catch (error: unknown) {
       let message = "Failed to start training";
       if (error instanceof ApiClientError) {
         message = error.message;
@@ -181,13 +182,6 @@ export function useAITraining() {
     const handleMessage = (event: MessageEvent) => {
       try {
         const response: JobEvent = JSON.parse(event.data);
-
-        console.log("response", response);
-
-        console.log("progress", response.progress);
-
-        console.log(progress);
-
         setProgress(response.progress);
 
         // Dynamic status based on state/progress
@@ -226,19 +220,16 @@ export function useAITraining() {
           setJobId(null);
           setProgress(0);
         }
-      } catch (error) {
-        console.error('Error parsing SSE message:', error);
+      } catch {
         toast.error("Training Status Error", { description: "Failed to parse status update" });
       }
     };
 
-    const handleError = (event: Event) => {
-      console.error('SSE connection error:', event);
+    const handleError = () => {
       eventSource.close();
       eventSourceRef.current = null;
 
-      let message = "Lost connection to training updates";
-      toast.error("Training Status Error", { description: message });
+      toast.error("Training Status Error", { description: "Lost connection to training updates" });
 
       setIsTraining(false);
       setUploading(false);

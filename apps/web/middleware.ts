@@ -5,9 +5,7 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
 
-  if (request.nextUrl.pathname === "/api/auth/callback" ||
-    request.nextUrl.pathname === "/api/track-referral"
-  ) {
+  if (request.nextUrl.pathname === "/api/auth/callback") {
     return response
   }
 

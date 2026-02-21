@@ -1,252 +1,194 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 import { useSupabase } from "@/components/supabase-provider"
-import { Loader2, Download, Clock } from "lucide-react"
+import { Plus, Search } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
+import { ContentCard } from "@/components/dashboard/common/ContentCard"
+import ContentCardSkeleton from "@/components/dashboard/common/skeleton/ContentCardSkeleton"
+import { EmptySvg } from "@/components/dashboard/common/EmptySvg"
+import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired"
+import { getThumbnails, deleteThumbnail, type ThumbnailJob } from "@/lib/api/getThumbnails"
 
-export default function ThumbnailGenerator() {
-  const { toast } = useToast()
-  const { user } = useSupabase()
-  const router = useRouter()
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [style, setStyle] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [thumbnailDescription, setThumbnailDescription] = useState("")
-  const [thumbnailUrl, setThumbnailUrl] = useState("")
-  const [isComingSoon] = useState(false) // Toggle this to false when feature is released
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.07 },
+    },
+}
 
-  const handleGenerateThumbnail = async () => {
-    if (isComingSoon) return // Prevent interaction when coming soon
-    if (!title) {
-      toast({
-        title: "Title required",
-        description: "Please enter a title to generate a thumbnail.",
-        variant: "destructive",
-      })
-      return
+const emptyStateVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.4 },
+    },
+}
+
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    queued: { label: "Queued", variant: "outline" },
+    processing: { label: "Processing", variant: "secondary" },
+    completed: { label: "Completed", variant: "default" },
+    failed: { label: "Failed", variant: "destructive" },
+}
+
+export default function Thumbnails() {
+    const { profile, profileLoading } = useSupabase()
+    const [thumbnails, setThumbnails] = useState<ThumbnailJob[]>([])
+    const [loading, setLoading] = useState(true)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [thumbnailToDelete, setThumbnailToDelete] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetchThumbnails = async () => {
+            setLoading(true)
+            const data = await getThumbnails()
+            setThumbnails(data)
+            setLoading(false)
+        }
+        fetchThumbnails()
+    }, [])
+
+    const handleDeleteThumbnail = async () => {
+        if (!thumbnailToDelete) return
+
+        const success = await deleteThumbnail(thumbnailToDelete)
+        if (success) {
+            setThumbnails(thumbnails.filter((t) => t.id !== thumbnailToDelete))
+            toast.success("Thumbnail deleted", {
+                description: "Your thumbnail has been deleted successfully.",
+            })
+        } else {
+            toast.error("Error deleting thumbnail", {
+                description: "Could not delete the thumbnail. Please try again.",
+            })
+        }
+        setThumbnailToDelete(null)
     }
 
-    setLoading(true)
-
-    try {
-      const response = await fetch("/api/create-thumbnail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          style,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to generate thumbnail")
-      }
-
-      const data = await response.json()
-      setThumbnailDescription(data.thumbnailDescription)
-      setThumbnailUrl(data.imageUrl)
-
-      toast({
-        title: "Thumbnail generated!",
-        description: "Your thumbnail description has been generated successfully.",
-      })
-    } catch (error: any) {
-      toast({
-        title: "Error generating thumbnail",
-        description: error.message,
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
+    if (profileLoading || loading) {
+        return <ContentCardSkeleton />
     }
-  }
 
-  return (
-    <div className="container py-8 relative">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Thumbnail Generator</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Create eye-catching thumbnails for your YouTube videos
-        </p>
-      </div>
+    const showTrainingOverlay = !profile?.youtube_connected || !profile?.ai_trained
 
-      <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="generate">Generate Thumbnail</TabsTrigger>
-          <TabsTrigger value="preview" disabled={!thumbnailUrl || isComingSoon}>
-            Preview & Download
-          </TabsTrigger>
-        </TabsList>
+    const filteredThumbnails = thumbnails.filter((t) =>
+        t.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
-        <TabsContent value="generate">
-          <Card className="relative">
-            <CardHeader>
-              <CardTitle>Thumbnail Generator</CardTitle>
-              <CardDescription>Fill in the details below to generate your thumbnail</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">Video Title (Required)</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., 10 Productivity Hacks That Changed My Life"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  disabled={loading || isComingSoon}
-                />
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Enter the title of your video to create a relevant thumbnail
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Video Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="e.g., In this video, I share my top productivity tips that helped me save 3 hours every day"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={loading || isComingSoon}
-                />
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Add a brief description to help generate a more targeted thumbnail
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="style">Thumbnail Style</Label>
-                <Select value={style} onValueChange={setStyle} disabled={loading || isComingSoon}>
-                  <SelectTrigger id="style">
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="minimalist">Minimalist</SelectItem>
-                    <SelectItem value="bold">Bold & Colorful</SelectItem>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="dramatic">Dramatic</SelectItem>
-                    <SelectItem value="playful">Playful</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Choose a style that matches your brand and video content
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                onClick={handleGenerateThumbnail}
-                className="w-full bg-slate-950 hover:bg-slate-900 text-white"
-                disabled={loading || isComingSoon}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  "Generate Thumbnail"
+    return (
+        <motion.div
+            className="container py-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">My Thumbnails</h1>
+                    <p className="text-slate-600 dark:text-slate-400 mt-1">
+                        Manage all your generated thumbnails
+                    </p>
+                </div>
+                {!showTrainingOverlay && (
+                    <Link href="/dashboard/thumbnails/new">
+                        <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all hover:shadow-lg hover:shadow-purple-500/10 dark:hover:shadow-purple-400/10">
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Thumbnail
+                        </Button>
+                    </Link>
                 )}
-              </Button>
-            </CardFooter>
+            </div>
 
-            {isComingSoon && (
-              <div className="absolute inset-0 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <Clock className="h-12 w-12 mx-auto text-slate-500 dark:text-slate-400" />
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Coming Soon
-                  </h2>
-                  <p className="text-slate-600 dark:text-slate-400 max-w-md">
-                    Stay tuned to unlock this exciting feature to create eye-catching thumbnails for your YouTube videos!
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/topics")}
-                    className="bg-slate-950 hover:bg-slate-900 text-white"
-                  >
-                    Back to Topics
-                  </Button>
+            <div className="mb-8">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+                    <Input
+                        placeholder="Search thumbnails..."
+                        className="pl-10 focus-visible:ring-2 focus-visible:ring-purple-500/80"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="preview">
-          <Card className="relative">
-            <CardHeader>
-              <CardTitle>Preview & Download</CardTitle>
-              <CardDescription>Review your generated thumbnail and download it</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <Label>Generated Thumbnail</Label>
-                <div className="border rounded-md overflow-hidden">
-                  <img
-                    src={thumbnailUrl || "/placeholder.svg?height=720&width=1280"}
-                    alt="Generated thumbnail"
-                    className="w-full h-auto"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Thumbnail Description</Label>
-                <div className="border rounded-md p-4 bg-slate-50 dark:bg-slate-900 whitespace-pre-wrap">
-                  {thumbnailDescription}
-                </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  This description can help you create the actual thumbnail in your preferred design tool
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => setThumbnailUrl("")} disabled={isComingSoon}>
-                Generate New
-              </Button>
-              <Button className="bg-slate-950 hover:bg-slate-900 text-white" disabled={isComingSoon}>
-                <Download className="mr-2 h-4 w-4" />
-                Download Thumbnail
-              </Button>
-            </CardFooter>
-
-            {isComingSoon && (
-              <div className="absolute inset-0 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <Clock className="h-12 w-12 mx-auto text-slate-500 dark:text-slate-400" />
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Coming Soon
-                  </h2>
-                  <p className="text-slate-600 dark:text-slate-400 max-w-md">
-                    Stay tuned to unlock this exciting feature to create eye-catching thumbnails for your YouTube videos!
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/topics")}
-                    className="bg-slate-950 hover:bg-slate-900 text-white"
-                  >
-                    Back to Topics
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+            <AnimatePresence mode="wait">
+                {showTrainingOverlay ? (
+                    <motion.div
+                        key="training-required"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <AITrainingRequired />
+                    </motion.div>
+                ) : filteredThumbnails.length > 0 ? (
+                    <motion.div
+                        key="thumbnail-list"
+                        className="grid grid-cols-1 gap-4"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        {filteredThumbnails.map((job) => {
+                            const config = statusConfig[job.status] ?? statusConfig.queued
+                            return (
+                                <ContentCard
+                                    key={job.id}
+                                    id={job.id}
+                                    title={job.prompt}
+                                    created_at={job.created_at}
+                                    onDelete={handleDeleteThumbnail}
+                                    setToDelete={setThumbnailToDelete}
+                                    type="thumbnails"
+                                    imagePreview={job.image_urls?.[0]}
+                                    statusBadge={
+                                        <Badge variant={config.variant} className="text-xs">
+                                            {config.label}
+                                        </Badge>
+                                    }
+                                />
+                            )
+                        })}
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="empty-state-illustrated"
+                        variants={emptyStateVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <div className="text-center py-16">
+                            <div className="flex flex-col items-center">
+                                <EmptySvg className="h-32 w-auto mb-6 text-slate-300 dark:text-slate-700" />
+                                <h3 className="font-semibold text-xl text-slate-800 dark:text-slate-200 mb-2">
+                                    Create your first thumbnail
+                                </h3>
+                                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                                    {searchQuery
+                                        ? `We couldn't find a thumbnail matching "${searchQuery}".`
+                                        : "Generate AI-powered thumbnails tailored to your channel. Get started now."}
+                                </p>
+                                {!searchQuery && (
+                                    <Link href="/dashboard/thumbnails/new">
+                                        <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Create Thumbnail
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    )
 }

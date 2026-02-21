@@ -1,22 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import { useSupabase } from "@/components/supabase-provider"
 import { toast } from "sonner"
 import { NewUserOnboarding } from "@/components/dashboard/main/NewUserOnboarding"
 import { ReturningUserHub } from "@/components/dashboard/main/ReturningUserHub"
-import { DashboardSkeleton } from "@/components/dashboard/main/skeleton/DashboardSkeleton"
-import { connectYoutubeChannel } from "@/lib/connectYT"
+import { DashboardSkeleton } from "@/components/dashboard/main/skeleton/DashboardSkeleton";
+import { connectYoutubeChannel, isGoogleProvider } from "@/lib/connectYT"
 import { getScripts, Script } from "@/lib/api/getScripts"
+import { GmailPromptDialog } from "@/components/dashboard/gmail-prompt-dialog"
 
 
 export default function Dashboard() {
-  const { supabase, user, profile, fetchUserProfile, session } = useSupabase()
+  const { supabase, user, profile, fetchUserProfile } = useSupabase();
 
-  const [recentScripts, setRecentScripts] = useState<Script[]>([])
-  const [isLoadingScripts, setIsLoadingScripts] = useState(true)
-  const [isConnectingYoutube, setIsConnectingYoutube] = useState(false)
-  const [isDisconnectingYoutube, setIsDisconnectingYoutube] = useState(false)
+  const [recentScripts, setRecentScripts] = useState<Script[]>([]);
+  const [isLoadingScripts, setIsLoadingScripts] = useState(true);
+  const [isConnectingYoutube, setIsConnectingYoutube] = useState(false);
+  const [isDisconnectingYoutube, setIsDisconnectingYoutube] = useState(false);
+  const [showGmailDialog, setShowGmailDialog] = useState(false);
 
   // Fetch scripts on component mount
   useEffect(() => {
@@ -25,24 +27,36 @@ export default function Dashboard() {
       try {
         const scripts = await getScripts()
         setRecentScripts(scripts)
-      } catch (error) {
-        console.error("Error loading scripts:", error)
+      } catch {
         toast.error("Failed to load scripts")
       } finally {
         setIsLoadingScripts(false)
       }
     }
 
-    console.log(session)
-
     fetchScripts()
   }, [])
 
   const handleConnectYoutube = () => {
+    if (!user) return
+    if (!isGoogleProvider(user)) {
+      setShowGmailDialog(true)
+      return
+    }
     connectYoutubeChannel({
       supabase,
       user,
       setIsConnectingYoutube,
+    })
+  }
+
+  const handleGmailSubmit = (gmail: string) => {
+    setShowGmailDialog(false)
+    connectYoutubeChannel({
+      supabase,
+      user,
+      setIsConnectingYoutube,
+      loginHint: gmail,
     })
   }
 
@@ -60,8 +74,9 @@ export default function Dashboard() {
 
       toast.success("YouTube channel disconnected successfully.")
       await fetchUserProfile(user.id)
-    } catch (error: any) {
-      toast.error(error.message || "Failed to disconnect YouTube channel.")
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to disconnect YouTube channel."
+      toast.error(message)
     } finally {
       setIsDisconnectingYoutube(false)
     }
@@ -101,6 +116,13 @@ export default function Dashboard() {
           disconnectingYoutube={isDisconnectingYoutube}
         />
       )}
+
+      <GmailPromptDialog
+        open={showGmailDialog}
+        onOpenChange={setShowGmailDialog}
+        onSubmit={handleGmailSubmit}
+        isLoading={isConnectingYoutube}
+      />
     </div>
   )
 }

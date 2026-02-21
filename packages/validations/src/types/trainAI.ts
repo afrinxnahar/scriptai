@@ -14,6 +14,7 @@ export interface StyleAnalysis {
     thumbnails: string;
     subtitles: string;
     audio_conversion: string;
+    story_builder: string;
   };
 }
 

@@ -4,10 +4,7 @@ import type { CreateDubInput } from '@repo/validation';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
 import type { Observable } from 'rxjs';
 import type { Request } from 'express';
-
-interface AuthRequest extends Request {
-  user?: { id: string };
-}
+import type { AuthRequest } from '../common/interfaces/auth-request.interface';
 
 @Controller('dubbing')
 export class DubbingController {

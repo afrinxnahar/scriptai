@@ -1,25 +1,74 @@
-# With-NestJs | API
+# Script AI — API
 
-## Getting Started
+NestJS backend for Script AI. Handles subtitles, dubbing, AI training, and auth.
 
-First, run the development server:
+## Endpoints
+
+### Auth (`/api/v1/auth`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/forgot-password` | Send OTP to email |
+| POST | `/verify-otp` | Verify 6-digit OTP |
+| POST | `/reset-password` | Reset password with verified OTP |
+
+### Subtitles (`/api/v1/subtitle`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/` | Generate subtitles with Gemini AI |
+| GET | `/` | List user's subtitle jobs |
+| POST | `/upload` | Upload video (max 200 MB) |
+| PATCH | `/` | Update subtitle JSON |
+| GET | `/:id` | Get single subtitle job |
+| PATCH | `/:id` | Update subtitle by ID |
+| DELETE | `/:id` | Delete subtitle job and file |
+| POST | `/burn` | Burn subtitles into video (FFmpeg) |
+
+### Dubbing (`/api/v1/dubbing`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/` | Create dubbing project (Murf.ai) |
+| GET | `/status/:projectId` | SSE stream for dubbing progress |
+| GET | `/` | List dubbing projects (paginated) |
+| GET | `/:id` | Get dubbing project |
+| DELETE | `/:id` | Delete dubbing project |
+
+### AI Training (`/api/v1/train-ai`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/` | Queue training job (BullMQ) |
+| GET | `/status/:jobId` | SSE stream for training progress |
+
+### Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Health check |
+| GET | `/api/v1/test-db` | Database connection test |
+
+## Auth
+
+All endpoints (except health) require a Supabase JWT in the `Authorization: Bearer <token>` header. Validated by `SupabaseAuthGuard`.
+
+## Key Integrations
+
+- **Supabase** — Database, auth, storage
+- **Google Gemini AI** — Transcription, translation
+- **Murf.ai** — Audio/video dubbing
+- **BullMQ + Redis** — Job queue for AI training
+- **FFmpeg** — Video processing
+- **Resend** — OTP emails
+
+## Setup
 
 ```bash
+cp .env.example .env
+# Fill in credentials (see .env.example)
+pnpm install
 pnpm run dev
 ```
 
-By default, your server will run at [http://localhost:3000](http://localhost:3000). You can use your favorite API platform like [Insomnia](https://insomnia.rest/) or [Postman](https://www.postman.com/) to test your APIs
-
-You can start editing the demo **APIs** by modifying [linksService](./src/links/links.service.ts) provider.
-
-### ⚠️ Note about build
-
-If you plan to only build this app. Please make sure you've built the packages first.
-
-## Learn More
-
-To learn more about NestJs, take a look at the following resources:
-
-- [Official Documentation](https://docs.nestjs.com) - A progressive Node.js framework for building efficient, reliable and scalable server-side applications.
-- [Official NestJS Courses](https://courses.nestjs.com) - Learn everything you need to master NestJS and tackle modern backend applications at any scale.
-- [GitHub Repo](https://github.com/nestjs/nest)
+Runs at [http://localhost:8000](http://localhost:8000).

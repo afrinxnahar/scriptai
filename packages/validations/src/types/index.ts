@@ -6,6 +6,7 @@ export interface UserProfile {
   ai_trained: boolean
   youtube_connected: boolean
   language: string
+  referral_code: string | null
 }
 
 export interface Script {

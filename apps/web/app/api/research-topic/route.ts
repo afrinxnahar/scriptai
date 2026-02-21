@@ -2,10 +2,7 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { jsonrepair } from "jsonrepair"
-import { parseResearchResponse } from '@/lib/parseResponse';
 
-// Define interfaces for type safety
 interface ResearchRequest {
   topic?: string;
   context?: string;
@@ -20,6 +17,46 @@ export interface ResearchData {
   contentAngles: string[];
   sources: string[];
 }
+
+const RESEARCH_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    topic: { type: 'string', description: 'Engaging, SEO-optimized suggested topic title' },
+    research: {
+      type: 'object',
+      properties: {
+        summary: { type: 'string', description: 'Concise, hook-filled overview tailored to the channel style' },
+        keyPoints: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Actionable key points with YouTube tips',
+        },
+        trends: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Current trends relevant to the niche',
+        },
+        questions: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Viewer questions to spark discussions',
+        },
+        contentAngles: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Video angles and content strategies',
+        },
+        sources: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Direct valid URLs from authoritative resources',
+        },
+      },
+      required: ['summary', 'keyPoints', 'trends', 'questions', 'contentAngles', 'sources'],
+    },
+  },
+  required: ['topic', 'research'],
+} as const;
 
 interface ResearchTopicRecord {
   id: string;
@@ -237,27 +274,29 @@ export async function POST(request: Request) {
     }
     `;
 
-    // Generate research with Gemini (updated with grounding via googleSearch tool)
-    const groundingTool = {
-      googleSearch: {},
-    };
-
-    const config = {
-      tools: [groundingTool],
-      // Optional: temperature: 1.0 for more factual outputs
-    };
-
+    // Structured output + googleSearch grounding requires Gemini 3 series per docs
     const result: any = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: [{
         role: "user",
         parts: [{ text: researchPrompt }]
       }],
-      config,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseJsonSchema: RESEARCH_RESPONSE_SCHEMA,
+      },
     });
 
-    const response = parseResearchResponse(result.text);
-    if (!response) {
+    const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? result?.text;
+    if (!rawText) {
+      return NextResponse.json({ message: 'AI returned an empty response' }, { status: 500 });
+    }
+
+    let response: { topic: string; research: ResearchData };
+    try {
+      response = JSON.parse(rawText);
+    } catch {
       return NextResponse.json({ message: 'Failed to generate valid research data' }, { status: 500 });
     }
 

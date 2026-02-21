@@ -39,9 +39,10 @@ export function ScriptsProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
       setScripts(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred"
       toast.error("Error fetching scripts", {
-        description: error.message,
+        description: message,
       });
     } finally {
       setLoading(false);

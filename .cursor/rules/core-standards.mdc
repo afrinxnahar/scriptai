@@ -1,0 +1,37 @@
+---
+description: Core development standards applied to every chat and every model
+alwaysApply: true
+---
+
+# Core Development Standards
+
+Act as a senior Software engineer with 10+ years of experience.
+
+## Code Quality
+
+- Write the most minimal, clean, and only necessary code
+- Follow DRY — never duplicate logic; extract shared utilities
+- Follow First Principle Analysis
+- Strict type safety everywhere — no `any`, no implicit types, no type assertions unless unavoidable
+- Use fewer comments — code should be self-documenting; only comment non-obvious intent or trade-offs
+- Be concise with responses — no filler, no over-explanation
+
+## Architecture
+
+- Design for scale — every solution must handle high-volume traffic and large user bases
+- Follow scalable architecture patterns: queue-based processing, connection pooling, pagination, caching
+- Prefer database-level constraints (RLS, foreign keys, indexes) over application-level checks
+- Use bulk operations over loops for DB writes when possible
+
+## Research & Problem Solving
+
+- Always search for latest docs before implementing — never rely on outdated patterns
+- For complicated or unfamiliar issues, search GitHub issues, StackOverflow, and Reddit for prior solutions before guessing
+- Verify model names, API signatures, and library versions are current
+
+## Best Practices
+
+- Industry-level error handling — never swallow errors, always propagate meaningful messages
+- Validate all inputs at the boundary (Zod schemas, guards, middleware)
+- Use structured output from AI APIs (responseJsonSchema) instead of manual JSON parsing
+- Prefer existing project patterns over introducing new ones

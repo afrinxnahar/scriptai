@@ -5,8 +5,6 @@ import { useState } from "react"
 import { useSupabase } from "@/components/supabase-provider"
 import { DashboardSidebar } from "@/components/dashboard/sidebar/dashboard-sidebar"
 import DashboardHeader from "@/components/dashboard-header"
-import { ScriptsProvider } from "@/hooks/use-script"
-
 
 export default function DashboardLayout({
   children,
@@ -14,8 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const { user, loading } = useSupabase()
-
+  const { loading } = useSupabase()
 
   if (loading) {
     return (
@@ -26,14 +23,12 @@ export default function DashboardLayout({
   }
 
   return (
-    // <ScriptsProvider>
-      <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
-        <DashboardSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <DashboardHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
-          <div className="flex-1 overflow-auto">{children}</div>
-        </div>
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+      <DashboardSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+        <div className="flex-1 overflow-auto">{children}</div>
       </div>
-    // {/*</ScriptsProvider>*/}
+    </div>
   )
 }

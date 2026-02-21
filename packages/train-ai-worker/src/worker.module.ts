@@ -3,6 +3,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import * as path from 'path';
 import { TrainAiProcessor } from './processor/train-ai.processor';
+import { ThumbnailProcessor } from './processor/thumbnail.processor';
+import { StoryBuilderProcessor } from './processor/story-builder.processor';
 
 @Module({
   imports: [
@@ -22,10 +24,12 @@ import { TrainAiProcessor } from './processor/train-ai.processor';
         password: process.env.REDIS_PASSWORD || undefined,
       },
     }),
-    BullModule.registerQueue({
-      name: 'train-ai',
-    }),
+    BullModule.registerQueue(
+      { name: 'train-ai' },
+      { name: 'thumbnail' },
+      { name: 'story-builder' },
+    ),
   ],
-  providers: [TrainAiProcessor],
+  providers: [TrainAiProcessor, ThumbnailProcessor, StoryBuilderProcessor],
 })
-export class WorkerModule { }
+export class WorkerModule {}
