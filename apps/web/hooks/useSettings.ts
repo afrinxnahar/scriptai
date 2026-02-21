@@ -1,21 +1,18 @@
-// hooks/useSettingsApi.ts
 "use client";
 
 import { useState } from "react";
 import { useSupabase } from "@/components/supabase-provider";
 import { toast } from "sonner";
+import { api } from "@/lib/api-client";
+import { BACKEND_URL } from "@/lib/constants";
 
-export function useSettings
-() {
+export function useSettings() {
   const { supabase, user } = useSupabase();
-
-  // --- Loading states ---
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingBilling, setLoadingBilling] = useState(false);
 
-  // --- Profile update ---
   const updateProfile = async ({
     name,
     language,
@@ -27,7 +24,7 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
     avatar?: File | null;
     initialAvatar: string | null;
   }) => {
-   if (!user) return;
+    if (!user) return;
     if (!name || name.length < 3) {
       toast.error("Name must be at least 3 characters long");
       return;
@@ -46,9 +43,6 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
         language,
         updated_at: new Date().toISOString(),
       };
-
-
-
       if (avatar) {
         const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
         if (!allowedTypes.includes(avatar.type)) {
@@ -59,30 +53,14 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
         const formData = new FormData();
         formData.append('file', avatar);
 
-        const response = await fetch('/api/uploads/avatar', {
-          method: 'POST',
-          body: formData, // no manual Content-Type
+        const result = await api.upload<{ url: string }>('/api/v1/upload/avatar', formData, {
+          requireAuth: true,
         });
-
-        const result = await response.json();
-        console.log(result.url);
-
-
-        if (!response.ok) {
-          const errorBody = await response.json();
-          throw new Error(errorBody.error || 'Failed to upload.');
-        }
         updates.avatar_url = result.url;
       } else if (!initialAvatar && !avatar) {
-        // Call the DELETE method of API route
-        await fetch('/api/uploads/avatar', {
-          method: 'DELETE',
-        });
+        await api.delete('/api/v1/upload/avatar', { requireAuth: true });
         updates.avatar_url = null;
       }
-
-      // console.log(updates)
-
       const { error } = await supabase
         .from("profiles")
         .update(updates)
@@ -91,9 +69,9 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
       if (error) throw error;
 
       toast.success("Profile updated", { description: "Your profile has been updated successfully." });
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error("Error updating profile", { description: error.message });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Error updating profile", { description: msg });
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -111,11 +89,10 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
   }) => {
     setLoadingNotifications(true);
     try {
-      // Example API simulation
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success("Notification preferences updated");
-    } catch (error: any) {
-      toast.error("Error updating notifications", { description: error.message });
+    } catch (error: unknown) {
+      toast.error("Error updating notifications", { description: error instanceof Error ? error.message : "Unknown error" });
     } finally {
       setLoadingNotifications(false);
     }
@@ -131,11 +108,10 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
   }) => {
     setLoadingBilling(true);
     try {
-      // Example API simulation
       await new Promise((resolve) => setTimeout(resolve, 500));
       toast.success("Billing info updated");
-    } catch (error: any) {
-      toast.error("Error updating billing", { description: error.message });
+    } catch (error: unknown) {
+      toast.error("Error updating billing", { description: error instanceof Error ? error.message : "Unknown error" });
     } finally {
       setLoadingBilling(false);
     }
@@ -146,8 +122,7 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
     if (!user?.email) return;
     setIsChangingPassword(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      const response = await fetch(`${backendUrl}/api/v1/auth/forgot-password`, {
+      const response = await fetch(`${BACKEND_URL}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -164,9 +139,9 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
       toast.success("Password reset email sent", {
         description: "If an account with that email exists, we have sent a password reset link.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Error sending password reset email", {
-        description: error.message || "An unexpected error occurred",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
       });
     } finally {
       setIsChangingPassword(false);
@@ -174,10 +149,9 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
   };
 
   return {
-    // Profile
     updateProfile,
-    isUpdatingProfile, // Renamed and specific
-  isChangingPassword,
+    isUpdatingProfile,
+    isChangingPassword,
     changePassword,
 
     // Notifications

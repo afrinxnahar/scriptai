@@ -2,42 +2,10 @@
 
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { DubbedResult, DubbingProgress } from "@repo/validation";
+import { DubbedResult, DubbingProgress, supportedLanguages } from "@repo/validation";
 import { api, ApiClientError } from "@/lib/api-client";
 import { useSupabase } from "@/components/supabase-provider";
-import { supportedLanguages } from "@repo/validation";
-
-// export const supportedLanguages = [
-//   { value: "en", label: "English" },
-//   { value: "es", label: "Spanish" },
-//   { value: "fr", label: "French" },
-//   { value: "de", label: "German" },
-//   { value: "it", label: "Italian" },
-//   { value: "hi", label: "Hindi" },
-//   { value: "zh", label: "Chinese" },
-//   { value: "ja", label: "Japanese" },
-//   { value: "ko", label: "Korean" },
-//   { value: "pt", label: "Portuguese" },
-//   { value: "pl", label: "Polish" },
-//   { value: "ru", label: "Russian" },
-//   { value: "nl", label: "Dutch" },
-//   { value: "tr", label: "Turkish" },
-//   { value: "sv", label: "Swedish" },
-//   { value: "id", label: "Indonesian" },
-//   { value: "fil", label: "Filipino" },
-//   { value: "uk", label: "Ukrainian" },
-//   { value: "el", label: "Greek" },
-//   { value: "cs", label: "Czech" },
-//   { value: "fi", label: "Finnish" },
-//   { value: "ro", label: "Romanian" },
-//   { value: "da", label: "Danish" },
-//   { value: "bg", label: "Bulgarian" },
-//   { value: "ms", label: "Malay" },
-//   { value: "sk", label: "Slovak" },
-//   { value: "hr", label: "Croatian" },
-//   { value: "ar", label: "Arabic" },
-//   { value: "ta", label: "Tamil" },
-// ] as const;
+import { BACKEND_URL } from "@/lib/constants";
 
 export function useDubbing() {
   const { supabase, session } = useSupabase();
@@ -138,9 +106,8 @@ export function useDubbing() {
       const { projectId } = response;
 
       // Connect to SSE for status updates
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
       eventSource = new EventSource(
-        `${baseUrl}/api/v1/dubbing/status/${projectId}`
+        `${BACKEND_URL}/api/v1/dubbing/status/${projectId}`
       );
 
       eventSource.onmessage = (event) => {
