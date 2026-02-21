@@ -3,6 +3,7 @@ import { type NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { Resend } from 'resend';
+import { BACKEND_URL } from '@/lib/constants';
 
 const CREDITS_PER_REFERRAL = 10;
 
@@ -118,8 +119,7 @@ async function processReferral(
   userEmail: string,
 ) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const response = await fetch(`${backendUrl}/api/v1/referral/track`, {
+    const response = await fetch(`${BACKEND_URL}/api/v1/referral/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ referralCode, userEmail }),

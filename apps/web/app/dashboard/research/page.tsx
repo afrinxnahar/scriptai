@@ -13,6 +13,8 @@ import { motion } from "motion/react";
 import { useSupabase } from "@/components/supabase-provider";
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired";
 import { Card } from "@/components/ui/card";
+import { downloadBlob } from "@/lib/download";
+import { api, ApiClientError } from "@/lib/api-client";
 
 interface ResearchTopic {
   id: string;
@@ -50,27 +52,11 @@ export default function Topics() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const response = await fetch("/api/research-topic", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to fetch topics");
-        }
-
-        const data = await response.json();
+        const data = await api.get<ResearchTopic[]>("/api/v1/research", { requireAuth: true });
         setTopics(data || []);
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "An unexpected error occurred"
-        toast.error("Error fetching topics", {
-          description: message,
-        });
+        const message = error instanceof ApiClientError ? error.message : "An unexpected error occurred";
+        toast.error("Error fetching topics", { description: message });
       } finally {
         setLoading(false);
       }
@@ -83,27 +69,12 @@ export default function Topics() {
     if (!topicToDelete) return;
 
     try {
-      const response = await fetch(`/api/research-topic/${topicToDelete}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete topic");
-      }
-
+      await api.delete(`/api/v1/research/${topicToDelete}`, { requireAuth: true });
       setTopics(topics.filter((topic) => topic.id !== topicToDelete));
-      toast.success("Topic deleted", {
-        description: "Your topic has been deleted successfully.",
-      });
+      toast.success("Topic deleted", { description: "Your topic has been deleted successfully." });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "An unexpected error occurred"
-      toast.error("Error deleting topic", {
-        description: message,
-      });
+      const message = error instanceof ApiClientError ? error.message : "An unexpected error occurred";
+      toast.error("Error deleting topic", { description: message });
     } finally {
       setTopicToDelete(null);
     }
@@ -115,31 +86,14 @@ export default function Topics() {
 
   const handleExport = async (id: string) => {
     try {
-      const response = await fetch(`/api/research-topic/${id}/export`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/pdf",
-        },
+      const blob = await api.get<Blob>(`/api/v1/research/${id}/export`, {
+        requireAuth: true,
+        responseType: "blob",
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to export topic");
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `research_topic_${id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      downloadBlob(blob, `research_topic_${id}.pdf`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "An unexpected error occurred"
-      toast.error("Error exporting topic", {
-        description: message,
-      });
+      const message = error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error("Error exporting topic", { description: message });
     }
   };
 

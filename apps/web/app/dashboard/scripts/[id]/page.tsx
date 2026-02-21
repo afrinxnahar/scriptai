@@ -12,6 +12,7 @@ import { ScriptLoaderSkeleton } from "@/components/dashboard/scripts/skeleton/sc
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import Script from "next/script"
 import { ScriptMetadata } from "@/components/dashboard/scripts/ScriptMetadata"
+import { api, ApiClientError } from "@/lib/api-client"
 
 interface Script {
   id: string
@@ -53,19 +54,7 @@ export default function ScriptPage() {
 
       setIsLoadingScript(true)
       try {
-        const response = await fetch(`/api/scripts/${scriptId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.message || "Failed to fetch script")
-        }
-
-        const data: Script = await response.json()
+        const data = await api.get<Script>(`/api/v1/script/${scriptId}`, { requireAuth: true })
         setScript(data)
         setTitle(data.title)
         setContent(data.content)
@@ -92,19 +81,7 @@ export default function ScriptPage() {
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title, content }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to update script")
-      }
-
+      await api.patch(`/api/v1/script/${scriptId}`, { title, content }, { requireAuth: true })
       toast.success("Script updated!", {
         description: "Your script changes have been saved successfully.",
       })
@@ -120,18 +97,7 @@ export default function ScriptPage() {
   const handleDeleteScript = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to delete script")
-      }
-
+      await api.delete(`/api/v1/script/${scriptId}`, { requireAuth: true })
       toast.success("Script deleted!", {
         description: "The script has been successfully deleted.",
       })

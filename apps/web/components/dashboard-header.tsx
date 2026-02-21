@@ -18,7 +18,7 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ sidebarCollapsed, setSidebarCollapsed }: DashboardHeaderProps) {
   const pathname = usePathname();
-  const { supabase, user, profile: initialProfile } = useSupabase();
+  const { user, profile: initialProfile, logout } = useSupabase();
   const [pageTitle, setPageTitle] = useState("");
   const [profile, setProfile] = useState(initialProfile);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -40,18 +40,10 @@ export default function DashboardHeader({ sidebarCollapsed, setSidebarCollapsed 
     setIsPopoverOpen(false);
   }, [pathname]);
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      router.push("/");
-      toast.success("Logged out successfully");
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error("Error logging out: " + error.message);
-      } else {
-        toast.error("An unknown error occurred during logout.");
-      }
-    }
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    router.replace("/");
+    logout();
   };
 
   return (

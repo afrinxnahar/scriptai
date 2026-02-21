@@ -10,6 +10,7 @@ import ScriptGenerationForm, {
 import ScriptOutputPanel from "@/components/dashboard/scripts/ScriptOutputPanel"
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired"
 import { updateScript } from "@/lib/api/getScripts"
+import { api } from "@/lib/api-client"
 import { ScriptLoaderSkeleton } from "@/components/dashboard/scripts/skeleton/scriptLoaderSkeleton"
 
 const calculateDurationInSeconds = (duration: string, customDuration: string) => {
@@ -78,17 +79,11 @@ export default function NewScriptPage() {
     setLatestFormData(formData)
 
     try {
-      const response = await fetch("/api/generate-script", {
-        method: "POST",
-        body: multipartData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to generate script")
-      }
-
-      const data = await response.json()
+      const data = await api.upload<{ id: string; title: string; script: string }>(
+        "/api/v1/script/generate",
+        multipartData,
+        { requireAuth: true },
+      )
 
       setGeneratedScript(data.script)
       setScriptTitle(data.title)

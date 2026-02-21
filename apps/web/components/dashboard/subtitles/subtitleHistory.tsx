@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { SubtitleHistorySkeleton } from "./skeleton/SubtitleHistorySkeleton";
 import { convertJsonToSrt } from "@/utils/convertJsonToSrt";
 import { convertJsonToVTT } from "@/utils/vttHelper";
+import { downloadBlob } from "@/lib/download";
 
 export function SubtitleHistory({ subtitles, isLoading, error, onDelete }: { subtitles: SubtitleResponse[], isLoading: boolean, error: string | null, onDelete: (id: string) => Promise<void> }) {
     const [deleteItem, setDeleteItem] = useState<SubtitleResponse | null>(null);
@@ -80,11 +81,7 @@ function Row({ item, onDelete }: { item: SubtitleResponse, onDelete: () => void 
             const txt = fmt === "srt" ? convertJsonToSrt(data) : convertJsonToVTT(data);
 
             const blob = new Blob([txt], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            Object.assign(a, { href: url, download: `${item.filename}.${fmt}` });
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `${item.filename}.${fmt}`);
             toast.success(`Downloaded .${fmt}`);
         } catch { toast.error("Download failed"); }
         setLoading(false);

@@ -9,6 +9,7 @@ import ResearchResults from "@/components/dashboard/research/ResearchResults";
 import { ResearchTopic } from "@repo/validation";
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired";
 import { useSupabase } from "@/components/supabase-provider";
+import { api } from "@/lib/api-client";
 
 export default function NewTopicPage() {
   const { profile } = useSupabase();
@@ -19,22 +20,11 @@ export default function NewTopicPage() {
   const handleResearchTopic = async (data: { topic: string; context: string; autoResearch: boolean }) => {
     setIsResearching(true);
     try {
-      const response = await fetch("/api/research-topic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: data.autoResearch ? undefined : data.topic,
-          context: data.context,
-          autoResearch: data.autoResearch,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to research topic");
-      }
-
-      const result = await response.json();
+      const result = await api.post<{ id: string; topic: string; research: any }>("/api/v1/research", {
+        topic: data.autoResearch ? undefined : data.topic,
+        context: data.context,
+        autoResearch: data.autoResearch,
+      }, { requireAuth: true });
       setResearchResult({
         id: result.id,
         topic: result.topic,

@@ -156,12 +156,18 @@ importers:
       jsonrepair:
         specifier: ^3.13.0
         version: 3.13.0
+      marked:
+        specifier: ^16.2.0
+        version: 16.2.0
       motion:
         specifier: ^12.23.12
         version: 12.23.12(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       multer:
         specifier: ^2.0.2
         version: 2.0.2
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
@@ -189,7 +195,7 @@ importers:
         version: 29.7.0
       '@nestjs/cli':
         specifier: ^10.0.0
-        version: 10.4.9
+        version: 10.4.9(esbuild@0.25.11)
       '@nestjs/schematics':
         specifier: ^10.0.0
         version: 10.2.3(chokidar@3.6.0)(typescript@5.5.4)
@@ -231,10 +237,10 @@ importers:
         version: 6.3.4
       ts-jest:
         specifier: ^29.2.5
-        version: 29.4.1(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.9)(ts-node@10.9.2(@types/node@20.19.9)(typescript@5.5.4)))(typescript@5.5.4)
+        version: 29.4.1(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(esbuild@0.25.11)(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.9)(ts-node@10.9.2(@types/node@20.19.9)(typescript@5.5.4)))(typescript@5.5.4)
       ts-loader:
         specifier: ^9.4.3
-        version: 9.5.2(typescript@5.5.4)(webpack@5.101.0)
+        version: 9.5.2(typescript@5.5.4)(webpack@5.97.1(esbuild@0.25.11))
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.9)(typescript@5.5.4)
@@ -357,10 +363,10 @@ importers:
         version: link:../../packages/validations
       '@supabase/ssr':
         specifier: ^0.6.1
-        version: 0.6.1(@supabase/supabase-js@2.96.0)
+        version: 0.6.1(@supabase/supabase-js@2.97.0)
       '@supabase/supabase-js':
         specifier: latest
-        version: 2.96.0
+        version: 2.97.0
       '@tabler/icons-react':
         specifier: ^3.34.1
         version: 3.34.1(react@19.1.1)
@@ -384,13 +390,16 @@ importers:
         version: 1.2.0(next@15.2.8(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)
       ai:
         specifier: latest
-        version: 6.0.90(zod@3.25.76)
+        version: 6.0.97(zod@3.25.76)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.6)
       axios:
         specifier: 'catalog:'
         version: 1.11.0
+      canvas-confetti:
+        specifier: ^1.9.4
+        version: 1.9.4
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -494,6 +503,9 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
+      '@types/canvas-confetti':
+        specifier: ^1.9.0
+        version: 1.9.0
       '@types/node':
         specifier: ^22
         version: 22.17.0
@@ -527,7 +539,7 @@ importers:
         version: 20.19.9
       ts-loader:
         specifier: ^9.4.3
-        version: 9.5.2(typescript@5.5.4)(webpack@5.101.0)
+        version: 9.5.2(typescript@5.5.4)(webpack@5.101.0(esbuild@0.25.11))
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.9)(typescript@5.5.4)
@@ -729,8 +741,8 @@ importers:
 
 packages:
 
-  '@ai-sdk/gateway@3.0.49':
-    resolution: {integrity: sha512-Smq0sMMqhIxZIUN7TjXitpa5M8SrJCpe/6rHxU7In6FuKb7y16qkj8vvWzmZtQFWZ/1h1Yo+h5ZdcS1KtgMP4g==}
+  '@ai-sdk/gateway@3.0.53':
+    resolution: {integrity: sha512-QT3FEoNARMRlk8JJVR7L98exiK9C8AGfrEJVbRxBT1yIXKs/N19o/+PsjTRVsARgDJNcy9JbJp1FspKucEat0Q==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -2894,8 +2906,8 @@ packages:
   '@supabase/auth-js@2.76.1':
     resolution: {integrity: sha512-bxmcgPuyjTUBg7+jAohJ15TDh3ph4hXcv7QkRsQgnIpszurD5LYaJPzX638ETQ8zDL4fvHZRHfGrcmHV8C91jA==}
 
-  '@supabase/auth-js@2.96.0':
-    resolution: {integrity: sha512-nk0BQgsACgI5tiJsFCjDtZJOdWHeKplbXIV4TBvAS/i7H3k+vG3zyW8XgqNB5GEY8oHzMfMAGdNsB4RU60GWfA==}
+  '@supabase/auth-js@2.97.0':
+    resolution: {integrity: sha512-2Og/1lqp+AIavr8qS2X04aSl8RBY06y4LrtIAGxat06XoXYiDxKNQMQzWDAKm1EyZFZVRNH48DO5YvIZ7la5fQ==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/functions-js@2.4.5':
@@ -2904,8 +2916,8 @@ packages:
   '@supabase/functions-js@2.76.1':
     resolution: {integrity: sha512-+zJym/GC1sofm5QYKGxHSszCpMW4Ao2dj/WC3YlffAGuIlIhUtWTJvKsv5q7sWaSKUKdDhGpWhZ2OD++fW5BtQ==}
 
-  '@supabase/functions-js@2.96.0':
-    resolution: {integrity: sha512-FG+zOrdbrVKjMlvbHa91mj8+mBS3/V2n2MM+r4kwqoxQYWQGcEhirR2udqwGqPG2tiqgfHnm1RsOWFvcubdjqQ==}
+  '@supabase/functions-js@2.97.0':
+    resolution: {integrity: sha512-fSaA0ZeBUS9hMgpGZt5shIZvfs3Mvx2ZdajQT4kv/whubqDBAp3GU5W8iIXy21MRvKmO2NpAj8/Q6y+ZkZyF/w==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/node-fetch@2.6.15':
@@ -2918,8 +2930,8 @@ packages:
   '@supabase/postgrest-js@2.76.1':
     resolution: {integrity: sha512-QJ1Cwim6L9gzWKP8U4Lgw9x/4lMWkZSVMDRYFCH+vVGitVbtfU885swTiioOjjUe4EYGZm+Xktg90twzSVv6IA==}
 
-  '@supabase/postgrest-js@2.96.0':
-    resolution: {integrity: sha512-OSQAza492P2NyS4MgDcMyvvRJvjuoFNxgGBS8erBZ5H16Zk4cSwYq47bV/L4ybxQiviC50z8AyXeEL4frL++yA==}
+  '@supabase/postgrest-js@2.97.0':
+    resolution: {integrity: sha512-g4Ps0eaxZZurvfv/KGoo2XPZNpyNtjth9aW8eho9LZWM0bUuBtxPZw3ZQ6ERSpEGogshR+XNgwlSPIwcuHCNww==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/realtime-js@2.15.0':
@@ -2928,8 +2940,8 @@ packages:
   '@supabase/realtime-js@2.76.1':
     resolution: {integrity: sha512-B5Lfmprea2fx2FS7obp4uAWiRUlEa6j9J3+BvvETGp/2LdkSRBaLEJCBylfcZTXk67ajNPX6ppvKvAZsckqXYg==}
 
-  '@supabase/realtime-js@2.96.0':
-    resolution: {integrity: sha512-m4ETI6KxiGfD50h5rDkuR2zIQEc0RlfiPV8Bhs2p/NPAmctweA8yb33slsMRLaJafoytadJyo4nP9gvig93wfA==}
+  '@supabase/realtime-js@2.97.0':
+    resolution: {integrity: sha512-37Jw0NLaFP0CZd7qCan97D1zWutPrTSpgWxAw6Yok59JZoxp4IIKMrPeftJ3LZHmf+ILQOPy3i0pRDHM9FY36Q==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/ssr@0.6.1':
@@ -2943,8 +2955,8 @@ packages:
   '@supabase/storage-js@2.76.1':
     resolution: {integrity: sha512-OJiNT8tocI9tcTjTjv1SBVLabzgEnS1NorZuqivkiJ0gTYmeg2c2PFmqCARhoQ4whF6zR9MVsX/Mtj2oSv4i/w==}
 
-  '@supabase/storage-js@2.96.0':
-    resolution: {integrity: sha512-7dgEM77GWw9phzLHi+M2vPqOqP99MAbdk/vorpebo/t50JWWS4ckxacHHjmaeLctT4ipVcbfB8rpdbLr95fTcw==}
+  '@supabase/storage-js@2.97.0':
+    resolution: {integrity: sha512-9f6NniSBfuMxOWKwEFb+RjJzkfMdJUwv9oHuFJKfe/5VJR8cd90qw68m6Hn0ImGtwG37TUO+QHtoOechxRJ1Yg==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/supabase-js@2.54.0':
@@ -2953,8 +2965,8 @@ packages:
   '@supabase/supabase-js@2.76.1':
     resolution: {integrity: sha512-dYMh9EsTVXZ6WbQ0QmMGIhbXct5+x636tXXaaxUmwjj3kY1jyBTQU8QehxAIfjyRu1mWGV07hoYmTYakkxdSGQ==}
 
-  '@supabase/supabase-js@2.96.0':
-    resolution: {integrity: sha512-KaIHsO6LU1cuqpYMsprQhfedRJFuTAf4dr8/k4/4Po6urRVXIWzmdY/lHPnf8Mzw2Fh0ueQVQYdaXzOvCBGnGQ==}
+  '@supabase/supabase-js@2.97.0':
+    resolution: {integrity: sha512-kTD91rZNO4LvRUHv4x3/4hNmsEd2ofkYhuba2VMUPRVef1RCmnHtm7rIws38Fg0yQnOSZOplQzafn0GSiy6GVg==}
     engines: {node: '>=20.0.0'}
 
   '@swc/counter@0.1.3':
@@ -3136,6 +3148,9 @@ packages:
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
+  '@types/canvas-confetti@1.9.0':
+    resolution: {integrity: sha512-aBGj/dULrimR1XDZLtG9JwxX1b4HPRF6CX9Yfwh3NvstZEm1ZL7RBnel4keCPSqs1ANRu1u2Aoz9R+VmtjYuTg==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -3542,8 +3557,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@6.0.90:
-    resolution: {integrity: sha512-3l6MgR7GDMUWkpLZ8tnrXUWVxbTs0m8rPOBe6A60FxtPnxwdgRyqaaYlHcMuSc4SJ0HHdt49a3Bah3zFBguA8w==}
+  ai@6.0.97:
+    resolution: {integrity: sha512-eZIAcBymwGhBwncRH/v9pillZNMeRCDkc4BwcvwXerXd7sxjVxRis3ZNCNCpP02pVH4NLs81ljm4cElC4vbNcQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3814,6 +3829,9 @@ packages:
 
   caniuse-lite@1.0.30001733:
     resolution: {integrity: sha512-e4QKw/O2Kavj2VQTKZWrwzkt3IxOmIlU6ajRb6LP64LHpBo1J67k2Hi4Vu/TgJWsNtynurfS0uK3MaUTCPfu5Q==}
+
+  canvas-confetti@1.9.4:
+    resolution: {integrity: sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw==}
 
   caseless@0.12.0:
     resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
@@ -7262,7 +7280,7 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@3.0.49(zod@3.25.76)':
+  '@ai-sdk/gateway@3.0.53(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
@@ -8111,32 +8129,6 @@ snapshots:
       '@nestjs/core': 10.4.20(@nestjs/common@10.4.20(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       bullmq: 5.62.2
       tslib: 2.8.1
-
-  '@nestjs/cli@10.4.9':
-    dependencies:
-      '@angular-devkit/core': 17.3.11(chokidar@3.6.0)
-      '@angular-devkit/schematics': 17.3.11(chokidar@3.6.0)
-      '@angular-devkit/schematics-cli': 17.3.11(chokidar@3.6.0)
-      '@nestjs/schematics': 10.2.3(chokidar@3.6.0)(typescript@5.7.2)
-      chalk: 4.1.2
-      chokidar: 3.6.0
-      cli-table3: 0.6.5
-      commander: 4.1.1
-      fork-ts-checker-webpack-plugin: 9.0.2(typescript@5.7.2)(webpack@5.97.1)
-      glob: 10.4.5
-      inquirer: 8.2.6
-      node-emoji: 1.11.0
-      ora: 5.4.1
-      tree-kill: 1.2.2
-      tsconfig-paths: 4.2.0
-      tsconfig-paths-webpack-plugin: 4.2.0
-      typescript: 5.7.2
-      webpack: 5.97.1
-      webpack-node-externals: 3.0.0
-    transitivePeerDependencies:
-      - esbuild
-      - uglify-js
-      - webpack-cli
 
   '@nestjs/cli@10.4.9(esbuild@0.25.11)':
     dependencies:
@@ -9490,7 +9482,7 @@ snapshots:
       '@supabase/node-fetch': 2.6.15
       tslib: 2.8.1
 
-  '@supabase/auth-js@2.96.0':
+  '@supabase/auth-js@2.97.0':
     dependencies:
       tslib: 2.8.1
 
@@ -9503,7 +9495,7 @@ snapshots:
       '@supabase/node-fetch': 2.6.15
       tslib: 2.8.1
 
-  '@supabase/functions-js@2.96.0':
+  '@supabase/functions-js@2.97.0':
     dependencies:
       tslib: 2.8.1
 
@@ -9520,7 +9512,7 @@ snapshots:
       '@supabase/node-fetch': 2.6.15
       tslib: 2.8.1
 
-  '@supabase/postgrest-js@2.96.0':
+  '@supabase/postgrest-js@2.97.0':
     dependencies:
       tslib: 2.8.1
 
@@ -9545,7 +9537,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@supabase/realtime-js@2.96.0':
+  '@supabase/realtime-js@2.97.0':
     dependencies:
       '@types/phoenix': 1.6.6
       '@types/ws': 8.18.1
@@ -9560,9 +9552,9 @@ snapshots:
       '@supabase/supabase-js': 2.76.1
       cookie: 1.0.2
 
-  '@supabase/ssr@0.6.1(@supabase/supabase-js@2.96.0)':
+  '@supabase/ssr@0.6.1(@supabase/supabase-js@2.97.0)':
     dependencies:
-      '@supabase/supabase-js': 2.96.0
+      '@supabase/supabase-js': 2.97.0
       cookie: 1.0.2
 
   '@supabase/storage-js@2.10.4':
@@ -9574,7 +9566,7 @@ snapshots:
       '@supabase/node-fetch': 2.6.15
       tslib: 2.8.1
 
-  '@supabase/storage-js@2.96.0':
+  '@supabase/storage-js@2.97.0':
     dependencies:
       iceberg-js: 0.8.1
       tslib: 2.8.1
@@ -9603,13 +9595,13 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@supabase/supabase-js@2.96.0':
+  '@supabase/supabase-js@2.97.0':
     dependencies:
-      '@supabase/auth-js': 2.96.0
-      '@supabase/functions-js': 2.96.0
-      '@supabase/postgrest-js': 2.96.0
-      '@supabase/realtime-js': 2.96.0
-      '@supabase/storage-js': 2.96.0
+      '@supabase/auth-js': 2.97.0
+      '@supabase/functions-js': 2.97.0
+      '@supabase/postgrest-js': 2.97.0
+      '@supabase/realtime-js': 2.97.0
+      '@supabase/storage-js': 2.97.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -9896,6 +9888,8 @@ snapshots:
     dependencies:
       '@types/connect': 3.4.38
       '@types/node': 20.19.9
+
+  '@types/canvas-confetti@1.9.0': {}
 
   '@types/connect@3.4.38':
     dependencies:
@@ -10335,9 +10329,9 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@6.0.90(zod@3.25.76):
+  ai@6.0.97(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 3.0.49(zod@3.25.76)
+      '@ai-sdk/gateway': 3.0.53(zod@3.25.76)
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
@@ -10658,6 +10652,8 @@ snapshots:
   camelcase@6.3.0: {}
 
   caniuse-lite@1.0.30001733: {}
+
+  canvas-confetti@1.9.4: {}
 
   caseless@0.12.0: {}
 
@@ -11536,23 +11532,6 @@ snapshots:
       tapable: 2.2.2
       typescript: 5.7.2
       webpack: 5.97.1(esbuild@0.25.11)
-
-  fork-ts-checker-webpack-plugin@9.0.2(typescript@5.7.2)(webpack@5.97.1):
-    dependencies:
-      '@babel/code-frame': 7.27.1
-      chalk: 4.1.2
-      chokidar: 3.6.0
-      cosmiconfig: 8.3.6(typescript@5.7.2)
-      deepmerge: 4.3.1
-      fs-extra: 10.1.0
-      memfs: 3.5.3
-      minimatch: 3.1.2
-      node-abort-controller: 3.1.1
-      schema-utils: 3.3.0
-      semver: 7.7.2
-      tapable: 2.2.2
-      typescript: 5.7.2
-      webpack: 5.97.1
 
   form-data@4.0.4:
     dependencies:
@@ -14152,6 +14131,17 @@ snapshots:
       minizlib: 3.1.0
       yallist: 5.0.0
 
+  terser-webpack-plugin@5.3.14(esbuild@0.25.11)(webpack@5.101.0(esbuild@0.25.11)):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.29
+      jest-worker: 27.5.1
+      schema-utils: 4.3.2
+      serialize-javascript: 6.0.2
+      terser: 5.43.1
+      webpack: 5.101.0(esbuild@0.25.11)
+    optionalDependencies:
+      esbuild: 0.25.11
+
   terser-webpack-plugin@5.3.14(esbuild@0.25.11)(webpack@5.97.1(esbuild@0.25.11)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.29
@@ -14162,24 +14152,6 @@ snapshots:
       webpack: 5.97.1(esbuild@0.25.11)
     optionalDependencies:
       esbuild: 0.25.11
-
-  terser-webpack-plugin@5.3.14(webpack@5.101.0):
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.29
-      jest-worker: 27.5.1
-      schema-utils: 4.3.2
-      serialize-javascript: 6.0.2
-      terser: 5.43.1
-      webpack: 5.101.0
-
-  terser-webpack-plugin@5.3.14(webpack@5.97.1):
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.29
-      jest-worker: 27.5.1
-      schema-utils: 4.3.2
-      serialize-javascript: 6.0.2
-      terser: 5.43.1
-      webpack: 5.97.1
 
   terser@5.43.1:
     dependencies:
@@ -14262,7 +14234,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-jest@29.4.1(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.9)(ts-node@10.9.2(@types/node@20.19.9)(typescript@5.5.4)))(typescript@5.5.4):
+  ts-jest@29.4.1(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(esbuild@0.25.11)(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.9)(ts-node@10.9.2(@types/node@20.19.9)(typescript@5.5.4)))(typescript@5.5.4):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -14280,9 +14252,10 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.28.0)
+      esbuild: 0.25.11
       jest-util: 29.7.0
 
-  ts-loader@9.5.2(typescript@5.5.4)(webpack@5.101.0):
+  ts-loader@9.5.2(typescript@5.5.4)(webpack@5.101.0(esbuild@0.25.11)):
     dependencies:
       chalk: 4.1.2
       enhanced-resolve: 5.18.3
@@ -14290,7 +14263,17 @@ snapshots:
       semver: 7.7.2
       source-map: 0.7.6
       typescript: 5.5.4
-      webpack: 5.101.0
+      webpack: 5.101.0(esbuild@0.25.11)
+
+  ts-loader@9.5.2(typescript@5.5.4)(webpack@5.97.1(esbuild@0.25.11)):
+    dependencies:
+      chalk: 4.1.2
+      enhanced-resolve: 5.18.3
+      micromatch: 4.0.8
+      semver: 7.7.2
+      source-map: 0.7.6
+      typescript: 5.5.4
+      webpack: 5.97.1(esbuild@0.25.11)
 
   ts-node@10.9.2(@types/node@20.19.9)(typescript@5.5.4):
     dependencies:
@@ -14615,7 +14598,7 @@ snapshots:
 
   webpack-sources@3.3.3: {}
 
-  webpack@5.101.0:
+  webpack@5.101.0(esbuild@0.25.11):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -14639,37 +14622,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.2
       tapable: 2.2.2
-      terser-webpack-plugin: 5.3.14(webpack@5.101.0)
-      watchpack: 2.4.4
-      webpack-sources: 3.3.3
-    transitivePeerDependencies:
-      - '@swc/core'
-      - esbuild
-      - uglify-js
-
-  webpack@5.97.1:
-    dependencies:
-      '@types/eslint-scope': 3.7.7
-      '@types/estree': 1.0.8
-      '@webassemblyjs/ast': 1.14.1
-      '@webassemblyjs/wasm-edit': 1.14.1
-      '@webassemblyjs/wasm-parser': 1.14.1
-      acorn: 8.15.0
-      browserslist: 4.25.1
-      chrome-trace-event: 1.0.4
-      enhanced-resolve: 5.18.3
-      es-module-lexer: 1.7.0
-      eslint-scope: 5.1.1
-      events: 3.3.0
-      glob-to-regexp: 0.4.1
-      graceful-fs: 4.2.11
-      json-parse-even-better-errors: 2.3.1
-      loader-runner: 4.3.0
-      mime-types: 2.1.35
-      neo-async: 2.6.2
-      schema-utils: 3.3.0
-      tapable: 2.2.2
-      terser-webpack-plugin: 5.3.14(webpack@5.97.1)
+      terser-webpack-plugin: 5.3.14(esbuild@0.25.11)(webpack@5.101.0(esbuild@0.25.11))
       watchpack: 2.4.4
       webpack-sources: 3.3.3
     transitivePeerDependencies:
