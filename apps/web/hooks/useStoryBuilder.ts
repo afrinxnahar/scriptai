@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { api, ApiClientError } from "@/lib/api-client"
+import { useSSE, type SSEEvent } from "./useSSE"
 import type {
   VideoDuration,
   ContentType,
   StoryBuilderResult,
 } from "@repo/validation"
-
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"
 
 export interface StoryBuilderJob {
   id: string
@@ -36,18 +35,18 @@ interface GenerateResponse {
   message: string
 }
 
-interface JobEvent {
-  state: 'waiting' | 'active' | 'completed' | 'failed'
-  progress: number
-  message: string
-  result?: StoryBuilderResult
-  error?: string
-  finished: boolean
-}
-
 interface ProfileStatus {
   aiTrained: boolean
   credits: number
+}
+
+const STATUS_MESSAGES = (p: number, state: string): string => {
+  if (state === "waiting") return "Waiting in queue..."
+  if (p < 15) return "Loading your creator profile..."
+  if (p < 20) return "Preparing analysis..."
+  if (p < 70) return "AI is structuring your story..."
+  if (p < 100) return "Finalizing story blueprint..."
+  return "Done!"
 }
 
 export function useStoryBuilder() {
@@ -60,8 +59,6 @@ export function useStoryBuilder() {
   const [personalized, setPersonalized] = useState(true)
 
   const [isGenerating, setIsGenerating] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [statusMessage, setStatusMessage] = useState("")
   const [jobId, setJobId] = useState<string | null>(null)
 
   const [generatedResult, setGeneratedResult] = useState<StoryBuilderResult | null>(null)
@@ -71,13 +68,6 @@ export function useStoryBuilder() {
   const [aiTrained, setAiTrained] = useState(false)
   const [credits, setCredits] = useState(0)
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-
-  const eventSourceRef = useRef<EventSource | null>(null)
-
-  useEffect(() => {
-    fetchPastJobs()
-    fetchProfileStatus()
-  }, [])
 
   const fetchProfileStatus = async () => {
     setIsLoadingProfile(true)
@@ -104,20 +94,38 @@ export function useStoryBuilder() {
     }
   }
 
-  const handleGenerate = async () => {
-    if (!videoTopic.trim()) {
-      toast.error("Please enter a video topic")
-      return
-    }
+  useEffect(() => {
+    fetchPastJobs()
+    fetchProfileStatus()
+  }, [])
 
-    if (videoTopic.trim().length < 3) {
+  const sse = useSSE<StoryBuilderResult>({
+    jobId,
+    endpoint: "/api/v1/story-builder/status",
+    getStatusMessages: STATUS_MESSAGES,
+    extractResult: (data: SSEEvent) => (data as any).result ?? null,
+    onComplete: (result) => {
+      if (result) {
+        setGeneratedResult(result)
+        toast.success("Story structure generated!", {
+          description: "Your story blueprint is ready",
+        })
+        fetchPastJobs()
+      }
+    },
+    onFinished: () => {
+      setIsGenerating(false)
+      setJobId(null)
+    },
+  })
+
+  const handleGenerate = async () => {
+    if (!videoTopic.trim() || videoTopic.trim().length < 3) {
       toast.error("Video topic must be at least 3 characters")
       return
     }
 
     setIsGenerating(true)
-    setProgress(0)
-    setStatusMessage("Queuing generation...")
     setGeneratedResult(null)
 
     try {
@@ -146,85 +154,9 @@ export function useStoryBuilder() {
         if (error.statusCode === 403) message = "Insufficient credits. Please upgrade your plan."
       }
       toast.error("Generation Failed", { description: message })
-      resetState()
+      setIsGenerating(false)
+      setJobId(null)
     }
-  }
-
-  useEffect(() => {
-    if (!jobId) return
-
-    const eventSource = new EventSource(
-      `${backendUrl}/api/v1/story-builder/status/${jobId}`
-    )
-    eventSourceRef.current = eventSource
-
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const data: JobEvent = JSON.parse(event.data)
-
-        setProgress(data.progress)
-
-        if (data.state === 'waiting') {
-          setStatusMessage("Waiting in queue...")
-        } else if (data.progress < 15) {
-          setStatusMessage("Loading your creator profile...")
-        } else if (data.progress < 20) {
-          setStatusMessage("Preparing analysis...")
-        } else if (data.progress < 70) {
-          setStatusMessage("AI is structuring your story...")
-        } else if (data.progress < 100) {
-          setStatusMessage("Finalizing story blueprint...")
-        }
-
-        if (data.finished) {
-          eventSource.close()
-          eventSourceRef.current = null
-
-          if (data.state === 'completed' && data.result) {
-            setGeneratedResult(data.result)
-            setStatusMessage("Done!")
-            toast.success("Story structure generated!", {
-              description: "Your story blueprint is ready",
-            })
-            fetchPastJobs()
-          } else if (data.state === 'failed') {
-            toast.error("Generation Failed", {
-              description: data.error || "An unknown error occurred",
-            })
-          }
-
-          setIsGenerating(false)
-          setJobId(null)
-          setProgress(0)
-        }
-      } catch {
-        console.error("Failed to parse SSE event")
-      }
-    }
-
-    const handleError = () => {
-      eventSource.close()
-      eventSourceRef.current = null
-      toast.error("Lost connection to generation updates")
-      resetState()
-    }
-
-    eventSource.addEventListener('message', handleMessage)
-    eventSource.addEventListener('error', handleError)
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close()
-        eventSourceRef.current = null
-      }
-    }
-  }, [jobId])
-
-  const resetState = () => {
-    setIsGenerating(false)
-    setJobId(null)
-    setProgress(0)
-    setStatusMessage("")
   }
 
   const handleRegenerate = () => {
@@ -265,33 +197,21 @@ export function useStoryBuilder() {
   }
 
   return {
-    videoTopic,
-    setVideoTopic,
-    targetAudience,
-    setTargetAudience,
-    videoDuration,
-    setVideoDuration,
-    contentType,
-    setContentType,
-    tone,
-    setTone,
-    additionalContext,
-    setAdditionalContext,
-    personalized,
-    setPersonalized,
+    videoTopic, setVideoTopic,
+    targetAudience, setTargetAudience,
+    videoDuration, setVideoDuration,
+    contentType, setContentType,
+    tone, setTone,
+    additionalContext, setAdditionalContext,
+    personalized, setPersonalized,
     isGenerating,
-    progress,
-    statusMessage,
+    progress: sse.progress,
+    statusMessage: sse.statusMessage,
     generatedResult,
-    pastJobs,
-    isLoadingJobs,
-    aiTrained,
-    credits,
-    isLoadingProfile,
-    handleGenerate,
-    handleRegenerate,
-    handleViewJob,
-    handleDeleteJob,
+    pastJobs, isLoadingJobs,
+    aiTrained, credits, isLoadingProfile,
+    handleGenerate, handleRegenerate,
+    handleViewJob, handleDeleteJob,
     clearForm,
   }
 }
