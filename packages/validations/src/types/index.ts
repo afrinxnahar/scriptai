@@ -12,7 +12,12 @@ export interface UserProfile {
 export interface Script {
   id: string
   title: string
+  content?: string
+  tone?: string
+  language?: string
   created_at: string
+  updated_at?: string
+  user_id?: string
 }
 
 export * from "./SubtitleTypes";
