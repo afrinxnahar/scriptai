@@ -10,8 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, RefreshCw, Wand } from "lucide-react"
+import { Download, RefreshCw } from "lucide-react"
 import { ThumbnailProgress } from "./ThumbnailProgress"
+import { GenerationPlaceholder } from "@/components/dashboard/common/GenerationPlaceholder"
 
 interface ThumbnailOutputPanelProps {
   isGenerating: boolean
@@ -96,7 +97,10 @@ export function ThumbnailOutputPanel({
             ))}
           </motion.div>
         ) : (
-          <Placeholder />
+          <GenerationPlaceholder
+            title="Ready to create thumbnails?"
+            description="Fill out the form and our AI will generate 3 unique thumbnail variations."
+          />
         )}
       </CardContent>
 
@@ -118,33 +122,5 @@ export function ThumbnailOutputPanel({
         </CardFooter>
       )}
     </Card>
-  )
-}
-
-function Placeholder() {
-  return (
-    <div
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.08) 1px, transparent 0)",
-        backgroundSize: "20px 20px",
-      }}
-      className="flex flex-col items-center justify-center h-[400px] text-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-4 relative overflow-hidden"
-    >
-      <div className="z-10">
-        <motion.div
-          animate={{ y: [0, -5, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <Wand className="h-12 w-12 text-slate-400 mb-4 mx-auto" />
-        </motion.div>
-        <p className="text-slate-700 dark:text-slate-300 font-semibold text-lg">
-          Ready to create thumbnails?
-        </p>
-        <p className="text-sm text-slate-500 dark:text-slate-500 max-w-xs mx-auto">
-          Fill out the form and our AI will generate 3 unique thumbnail variations.
-        </p>
-      </div>
-    </div>
   )
 }

@@ -13,7 +13,10 @@ import {
   fetchVideoData,
   analyzeStyle,
   generateEmbedding,
+  generateTopicEmbedding,
   saveStyleData,
+  extractChannelIntelligence,
+  enrichChannelIntelligenceWithAI,
 } from './utils/train-ai';
 
 interface TrainAiJobData {
@@ -67,7 +70,7 @@ export class TrainAiProcessor extends WorkerHost {
 
       totalConsumedTokens += totalVideoTokens;
 
-      await job.updateProgress(60);
+      await job.updateProgress(50);
       await job.log('Analyzing style and embedding...');
 
       const { styleAnalysis, totalStyleTokens } =
@@ -77,7 +80,20 @@ export class TrainAiProcessor extends WorkerHost {
 
       const embedding = await generateEmbedding(this.genAI, styleAnalysis);
 
+      await job.updateProgress(70);
+      await job.log('Extracting channel intelligence...');
+
+      const baseIntelligence = extractChannelIntelligence(videoData, transcripts);
+      const { enriched: channelIntelligence, tokens: intelTokens } =
+        await enrichChannelIntelligenceWithAI(this.genAI, baseIntelligence, channelData);
+      totalConsumedTokens += intelTokens;
+
       await job.updateProgress(80);
+      await job.log('Generating topic embedding...');
+
+      const topicEmbedding = await generateTopicEmbedding(this.genAI, channelIntelligence, channelData);
+
+      await job.updateProgress(85);
       await job.log('Saving data...');
 
       await saveStyleData(
@@ -88,7 +104,9 @@ export class TrainAiProcessor extends WorkerHost {
         videoUrls,
         transcripts,
         thumbnails,
-        totalConsumedTokens
+        totalConsumedTokens,
+        channelIntelligence,
+        topicEmbedding,
       );
 
       await job.updateProgress(100);

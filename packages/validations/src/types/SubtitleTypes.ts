@@ -13,5 +13,5 @@ export type SubtitleResponse = {
     created_at: string;
     updated_at: string;
     filename: string;
-
+    title: string | null;
 };

@@ -5,7 +5,7 @@ import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, RefreshCw, Upload, CheckCircle2, Eye, ChevronDown, Search } from "lucide-react"
+import { Loader2, RefreshCw, Upload, CheckCircle2, Eye, Search } from "lucide-react"
 import { useChannelVideos, type ChannelVideo } from "@/hooks/useChannelVideos"
 
 function formatViewCount(count: number): string {
@@ -108,19 +108,19 @@ export function ChannelVideoGrid({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <CardTitle>Select Your Videos</CardTitle>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                selectedVideoIds.length >= 3
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${selectedVideoIds.length >= 3
                   ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                   : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-              }`}>
+                }`}>
                 {selectionLabel}
               </span>
             </div>
 
             <Button
               onClick={onStartTraining}
-              size="sm"
+              size="default"
               disabled={uploading || !isYtConnected || selectedVideoIds.length < 3}
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-shadow shrink-0"
             >
               {uploading ? (
                 <>
@@ -190,17 +190,13 @@ export function ChannelVideoGrid({
               {hasMore && !search.trim() && (
                 <div className="flex justify-center mt-4">
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={loadMore}
                     disabled={loadingMore}
+                    className="opacity-50 hover:opacity-100"
                   >
-                    {loadingMore ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                    )}
-                    Load More Videos
+                    <Loader2 className={`h-5 w-5 ${loadingMore ? "animate-spin" : ""}`} />
                   </Button>
                 </div>
               )}

@@ -13,7 +13,7 @@ import { TrainingProgress } from "@/components/dashboard/train/TrainingProgress"
 
 const nextSteps = [
   { title: "Create Scripts", description: "Generate scripts in your style", icon: PenTool, href: "/dashboard/scripts" },
-  { title: "Research Topics", description: "Discover trending topics", icon: Search, href: "/dashboard/research" },
+  { title: "Ideation", description: "Discover trending ideas", icon: Search, href: "/dashboard/research" },
   { title: "Audio Dubbing", description: "Dub audio in any language", icon: Volume2, href: "/dashboard/dubbing" },
   { title: "Thumbnails", description: "AI-generated thumbnails", icon: ImageIcon, href: "/dashboard/thumbnails" },
   { title: "Subtitles", description: "Auto-generate subtitles", icon: Subtitles, href: "/dashboard/subtitles" },

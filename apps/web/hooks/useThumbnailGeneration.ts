@@ -73,7 +73,7 @@ export function useThumbnailGeneration(options?: UseThumbnailGenerationOptions) 
       const data = await api.get<ThumbnailJob[]>('/api/v1/thumbnail', { requireAuth: true })
       setPastJobs(data)
     } catch {
-      // silent
+      toast.error("Failed to load thumbnail jobs")
     } finally {
       setIsLoadingJobs(false)
     }
