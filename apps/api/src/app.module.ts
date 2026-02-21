@@ -15,6 +15,12 @@ import { DubbingModule } from './dubbing/dubbing.module';
 import { ThumbnailModule } from './thumbnail/thumbnail.module';
 import { StoryBuilderModule } from './story-builder/story-builder.module';
 import { ReferralModule } from './referral/referral.module';
+import { ScriptModule } from './script/script.module';
+import { ResearchModule } from './research/research.module';
+import { CourseModule } from './course/course.module';
+import { YoutubeModule } from './youtube/youtube.module';
+import { UploadModule } from './upload/upload.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -53,8 +59,14 @@ import { ReferralModule } from './referral/referral.module';
     ThumbnailModule,
     StoryBuilderModule,
     ReferralModule,
+    ScriptModule,
+    ResearchModule,
+    CourseModule,
+    YoutubeModule,
+    UploadModule,
+    SupportModule,
   ],
   controllers: [AppController, HealthController, TrainAiController],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
