@@ -143,9 +143,12 @@ Your task is to transcribe the provided audio file and generate precise, time-st
 8.  **Accuracy:** Transcribe the audio verbatim. Do not paraphrase or correct the speaker's grammar. ${hasTargetLanguage ? `When translating, maintain the meaning and tone of the original speech.` : ''}
 9.  **SUBTITLE LENGTH:** Keep each subtitle entry SHORT and concise. Each subtitle should contain a maximum of 1-2 short sentences or 5-10 words. Break longer sentences into multiple subtitle entries with appropriate timestamps. This ensures subtitles are readable and don't cover the entire screen. Think of comfortable reading speed - viewers should be able to read the subtitle in 2-3 seconds.
 
+10. **Title:** Generate a short, descriptive title (max 60 characters) summarizing the main topic of the video based on the transcribed content. The title should be concise and meaningful.
+
 **Output Example:**
 {
   "detected_language": "English",
+  "title": "Introduction to Machine Learning Basics",
   "subtitles": [
     { "start": "00:00:01.200", "end": "00:00:04.100", "text": "${hasTargetLanguage ? `[Translated text in ${targetLanguage}]` : 'Hello everyone, and welcome.'}" },
     { "start": "00:00:04.350", "end": "00:00:07.000", "text": "${hasTargetLanguage ? `[Translated text in ${targetLanguage}]` : 'Today we\'re going to discuss...'}" },
@@ -200,7 +203,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
         const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         subtitlesData = JSON.parse(cleanedText);
 
-        if (!subtitlesData.detected_language || !subtitlesData.subtitles) {
+        if (!subtitlesData.detected_language || !subtitlesData.subtitles || !subtitlesData.title) {
           throw new Error('Invalid response structure from Gemini');
         }
       } catch (parseError) {
@@ -211,6 +214,7 @@ Your task is to transcribe the provided audio file and generate precise, time-st
 
       const subtitlesJson = subtitlesData.subtitles;
       const detectedLanguage = subtitlesData.detected_language;
+      const generatedTitle = (subtitlesData.title as string)?.slice(0, 60);
 
       const { data, error: subtitleInsertError } = await this.supabaseService.getClient()
         .from("subtitle_jobs")
@@ -220,7 +224,8 @@ Your task is to transcribe the provided audio file and generate precise, time-st
           language: language,
           detected_language: detectedLanguage,
           target_language: targetLanguage,
-          duration: duration
+          duration: duration,
+          title: generatedTitle,
         })
         .eq("id", subtitleId)
         .eq("user_id", userId)

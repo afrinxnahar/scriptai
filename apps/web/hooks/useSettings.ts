@@ -11,7 +11,7 @@ export function useSettings() {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [loadingBilling, setLoadingBilling] = useState(false);
+  
 
   const updateProfile = async ({
     name,
@@ -98,25 +98,6 @@ export function useSettings() {
     }
   };
 
-  // --- Billing update ---
-  const updateBilling = async ({
-    plan,
-    paymentMethod,
-  }: {
-    plan: string;
-    paymentMethod: string;
-  }) => {
-    setLoadingBilling(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      toast.success("Billing info updated");
-    } catch (error: unknown) {
-      toast.error("Error updating billing", { description: error instanceof Error ? error.message : "Unknown error" });
-    } finally {
-      setLoadingBilling(false);
-    }
-  };
-
   // --- Password reset ---
   const changePassword = async () => {
     if (!user?.email) return;
@@ -157,9 +138,5 @@ export function useSettings() {
     // Notifications
     updateNotifications,
     loadingNotifications,
-
-    // Billing
-    updateBilling,
-    loadingBilling,
   };
 }

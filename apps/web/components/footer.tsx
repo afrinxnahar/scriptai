@@ -25,8 +25,8 @@ const Footer = () => {
         <div className="flex flex-col items-center text-center">
           <div className="space-y-4 mb-8">
             <div className="flex items-center justify-center gap-3">
-              <Image src={logo} alt="Script AI Logo" width={40} height={40} />
-              <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">Script AI</span>
+              <Image src={logo} alt="Creator AI Logo" width={40} height={40} />
+              <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">Creator AI</span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm">
               Personalized AI assistant for content creators.
@@ -64,7 +64,7 @@ const Footer = () => {
             </p> */}
           </div>
           <div className="border-t border-slate-200 dark:border-slate-700 w-full pt-8 text-sm text-slate-600 dark:text-slate-400 flex flex-col items-center gap-2">
-            &copy; {new Date().getFullYear()} Script AI. All rights reserved.
+            &copy; {new Date().getFullYear()} Creator AI. All rights reserved.
           </div>
         </div>
       </div>

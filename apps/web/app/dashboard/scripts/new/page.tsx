@@ -1,180 +1,112 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { AnimatePresence, motion } from "motion/react"
+import { useScriptGeneration } from "@/hooks/useScriptGeneration"
 import { useSupabase } from "@/components/supabase-provider"
-import ScriptGenerationForm, {
-  type ScriptFormData,
-} from "@/components/dashboard/scripts/ScriptGenerationForm"
+import ScriptGenerationForm from "@/components/dashboard/scripts/ScriptGenerationForm"
 import ScriptOutputPanel from "@/components/dashboard/scripts/ScriptOutputPanel"
+import { ScriptHowItWorksGuide } from "@/components/dashboard/scripts/ScriptHowItWorksGuide"
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired"
-import { updateScript } from "@/lib/api/getScripts"
-import { api } from "@/lib/api-client"
-import { ScriptLoaderSkeleton } from "@/components/dashboard/scripts/skeleton/scriptLoaderSkeleton"
-
-const calculateDurationInSeconds = (duration: string, customDuration: string) => {
-  switch (duration) {
-    case "1min":
-      return "60"
-    case "3min":
-      return "180"
-    case "5min":
-      return "300"
-    case "custom":
-      if (!customDuration || !customDuration.includes(":")) {
-        return "0"
-      }
-      const parts = customDuration.split(":")
-      const minutes = parseInt(parts[0] ?? "0", 10) || 0
-      const seconds = parseInt(parts[1] ?? "0", 10) || 0
-      return (minutes * 60 + seconds).toString()
-    default:
-      return "0"
-  }
-}
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function NewScriptPage() {
   const router = useRouter()
   const { profile, profileLoading } = useSupabase()
-  const [loadingSave, setLoadingSave] = useState(false)
-  const [loadingGenerate, setLoadingGenerate] = useState(false)
-  const [generatedScript, setGeneratedScript] = useState("")
-  const [scriptTitle, setScriptTitle] = useState("")
-  const [scriptId, setScriptId] = useState<string | null>(null)
-
-  const [latestFormData, setLatestFormData] = useState<ScriptFormData | null>(null)
-
-  const handleGenerateScript = async (formData: ScriptFormData) => {
-    if (!formData.prompt) {
-      toast.error("Prompt required", {
-        description: "Please enter a prompt to generate a script.",
-      })
-      return
-    }
-
-    const durationInSeconds = calculateDurationInSeconds(
-        formData.duration,
-        formData.customDuration || ""
-    )
-    formData.duration = durationInSeconds || "300"
-    delete formData.customDuration
-    formData.personalized = profile?.ai_trained
-
-    const multipartData = new FormData()
-    for (const [key, value] of Object.entries(formData)) {
-      if (key === "files" && Array.isArray(value)) {
-        for (const file of value) {
-          multipartData.append("files", file, file.name)
-        }
-      } else if (typeof value === "boolean") {
-        multipartData.append(key, String(value))
-      } else if (value !== undefined && value !== null) {
-        multipartData.append(key, value as string)
-      }
-    }
-
-    setLoadingGenerate(true)
-    setGeneratedScript("")
-    setLatestFormData(formData)
-
-    try {
-      const data = await api.upload<{ id: string; title: string; script: string }>(
-        "/api/v1/script/generate",
-        multipartData,
-        { requireAuth: true },
-      )
-
-      setGeneratedScript(data.script)
-      setScriptTitle(data.title)
-      setScriptId(data.id)
-
-      toast.success("Script generated!", {
-        description: "Your script is ready for review.",
-      })
-    } catch (error: any) {
-      toast.error("Error generating script", { description: error.message })
-    } finally {
-      setLoadingGenerate(false)
-    }
-  }
-
-  const handleRegenerateScript = () => {
-    if (latestFormData) {
-      handleGenerateScript(latestFormData)
-    } else {
-      toast.error("No data to regenerate", {
-        description: "Please generate a script first.",
-      })
-    }
-  }
-
-  const handleSaveScript = async () => {
-    if (!generatedScript || !scriptTitle || !scriptId) {
-      toast.error("Missing information", {
-        description: "Please generate a script before saving.",
-      })
-      return
-    }
-
-    setLoadingSave(true)
-
-    try {
-      const result = await updateScript(scriptId, {
-        title: scriptTitle,
-        content: generatedScript,
-      })
-
-      if (!result) {
-        throw new Error("Failed to save the script. Please try again.")
-      }
-
-      toast.success("Script saved!", {
-        description: "Your script has been saved successfully.",
-      })
-
-      router.push(`/dashboard/scripts`)
-    } catch (error: any) {
-      toast.error("Error saving script", { description: error.message })
-    } finally {
-      setLoadingSave(false)
-    }
-  }
+  const hook = useScriptGeneration({
+    onComplete: (id) => router.push(`/dashboard/scripts/${id}`),
+  })
 
   if (profileLoading) {
-    return <ScriptLoaderSkeleton />
+    return (
+      <div className="container py-8 space-y-4">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-6 w-96" />
+        <Skeleton className="h-[600px] rounded-lg mt-8" />
+      </div>
+    )
   }
 
-  if (!profile?.ai_trained || !profile?.youtube_connected) {
-    return <AITrainingRequired />
-  }
+  const showTrainingOverlay = !profile?.youtube_connected || !profile?.ai_trained
 
   return (
-      <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Create New Script</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Generate your script step-by-step
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <ScriptGenerationForm
-              loading={loadingGenerate}
-              onGenerate={handleGenerateScript}
-          />
-
-          <ScriptOutputPanel
-              loading={loadingSave}
-              loadingGenerate={loadingGenerate}
-              generatedScript={generatedScript}
-              setGeneratedScript={setGeneratedScript}
-              scriptTitle={scriptTitle}
-              setScriptTitle={setScriptTitle}
-              onSave={handleSaveScript}
-              onRegenerate={handleRegenerateScript}
-          />
-        </div>
+    <motion.div
+      className="container py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Create New Script</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">
+          Generate AI-powered scripts personalized to your channel style
+        </p>
       </div>
+
+      {showTrainingOverlay ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AITrainingRequired />
+        </motion.div>
+      ) : (
+        <AnimatePresence mode="wait">
+          {hook.showOutput ? (
+            <motion.div
+              key="output"
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ScriptOutputPanel
+                isGenerating={hook.isGenerating}
+                progress={hook.progress}
+                statusMessage={hook.statusMessage}
+                generatedScript={hook.generatedScript}
+                setGeneratedScript={hook.setGeneratedScript}
+                generatedTitle={hook.generatedTitle}
+                setGeneratedTitle={hook.setGeneratedTitle}
+                creditsConsumed={hook.creditsConsumed}
+                scriptId={hook.scriptJobId}
+                onRegenerate={hook.handleRegenerate}
+                onNewGeneration={hook.clearForm}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 40 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start"
+            >
+              <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-8">
+                <ScriptHowItWorksGuide />
+              </div>
+              <div className="lg:col-span-2">
+                <ScriptGenerationForm
+                  prompt={hook.prompt} setPrompt={hook.setPrompt}
+                  context={hook.context} setContext={hook.setContext}
+                  tone={hook.tone} setTone={hook.setTone}
+                  language={hook.language} setLanguage={hook.setLanguage}
+                  duration={hook.duration} setDuration={hook.setDuration}
+                  customDuration={hook.customDuration} setCustomDuration={hook.setCustomDuration}
+                  includeStorytelling={hook.includeStorytelling} setIncludeStorytelling={hook.setIncludeStorytelling}
+                  includeTimestamps={hook.includeTimestamps} setIncludeTimestamps={hook.setIncludeTimestamps}
+                  references={hook.references} setReferences={hook.setReferences}
+                  files={hook.files} setFiles={hook.setFiles}
+                  isGenerating={hook.isGenerating}
+                  onGenerate={hook.handleGenerate}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+    </motion.div>
   )
 }

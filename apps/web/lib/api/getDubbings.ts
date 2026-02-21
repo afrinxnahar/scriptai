@@ -1,4 +1,5 @@
 import { api } from "@/lib/api-client"
+import { toast } from "sonner"
 import { DubResponse } from "@repo/validation"
 
 export interface DubbingProject {
@@ -21,8 +22,8 @@ export async function getDubbings(accessToken?: string): Promise<DubbingProject[
       requireAuth: true,
       accessToken,
     })
-  } catch (error) {
-    console.error("Error fetching dubbings:", error)
+  } catch {
+    toast.error("Failed to load dubbings")
     return []
   }
 }
@@ -36,8 +37,8 @@ export async function getDubbing(
       requireAuth: true,
       accessToken,
     })
-  } catch (error) {
-    console.error(`Error fetching dubbing ${projectId}:`, error)
+  } catch {
+    toast.error("Failed to load dubbing details")
     return null
   }
 }
@@ -52,8 +53,7 @@ export async function deleteDubbing(
       accessToken,
     })
     return true
-  } catch (error) {
-    console.error(`Error deleting dubbing ${projectId}:`, error)
+  } catch {
     return false
   }
 }

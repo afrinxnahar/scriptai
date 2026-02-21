@@ -16,11 +16,12 @@ import { ThumbnailModule } from './thumbnail/thumbnail.module';
 import { StoryBuilderModule } from './story-builder/story-builder.module';
 import { ReferralModule } from './referral/referral.module';
 import { ScriptModule } from './script/script.module';
-import { ResearchModule } from './research/research.module';
 import { CourseModule } from './course/course.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { UploadModule } from './upload/upload.module';
 import { SupportModule } from './support/support.module';
+import { IdeationModule } from './ideation/ideation.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -48,9 +49,10 @@ import { SupportModule } from './support/support.module';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({
-      name: 'train-ai'
-    }),
+    BullModule.registerQueue(
+      { name: 'train-ai' },
+      { name: 'script' },
+    ),
     SupabaseModule,
     TrainAiModule,
     AuthModule,
@@ -60,11 +62,12 @@ import { SupportModule } from './support/support.module';
     StoryBuilderModule,
     ReferralModule,
     ScriptModule,
-    ResearchModule,
     CourseModule,
     YoutubeModule,
     UploadModule,
     SupportModule,
+    IdeationModule,
+    BillingModule,
   ],
   controllers: [AppController, HealthController, TrainAiController],
   providers: [],

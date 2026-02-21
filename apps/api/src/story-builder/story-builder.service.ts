@@ -7,9 +7,7 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { SupabaseService } from '../supabase/supabase.service';
-import { type CreateStoryBuilderInput, hasEnoughCredits } from '@repo/validation';
-
-const CREDITS_PER_STORY = 1;
+import { type CreateStoryBuilderInput, hasEnoughCredits, getMinimumCreditsForStoryBuilder } from '@repo/validation';
 
 @Injectable()
 export class StoryBuilderService {
@@ -19,7 +17,13 @@ export class StoryBuilderService {
   ) {}
 
   async createJob(userId: string, input: CreateStoryBuilderInput) {
-    const { videoTopic, targetAudience, videoDuration, contentType, tone, additionalContext, personalized } = input;
+    const {
+      videoTopic, ideationId, ideaIndex, targetAudience,
+      audienceLevel, videoDuration, contentType, storyMode,
+      tone, additionalContext, personalized,
+    } = input;
+
+    const minCredits = getMinimumCreditsForStoryBuilder();
 
     const { data: profile, error: profileError } = await this.supabaseService
       .getClient()
@@ -29,13 +33,39 @@ export class StoryBuilderService {
       .single();
 
     if (profileError || !profile) throw new NotFoundException('Profile not found');
-    if (!hasEnoughCredits(profile.credits, CREDITS_PER_STORY)) {
+    if (!hasEnoughCredits(profile.credits, minCredits)) {
       throw new ForbiddenException(
-        `Insufficient credits. Need ${CREDITS_PER_STORY}, have ${profile.credits}.`,
+        `Insufficient credits. Need ${minCredits}, have ${profile.credits}.`,
       );
     }
 
     const shouldPersonalize = personalized !== false && profile.ai_trained === true;
+
+    let ideationContext: string | undefined;
+    if (ideationId) {
+      const { data: ideationJob } = await this.supabaseService
+        .getClient()
+        .from('ideation_jobs')
+        .select('result')
+        .eq('id', ideationId)
+        .eq('user_id', userId)
+        .single();
+
+      if (ideationJob?.result?.ideas && ideaIndex != null) {
+        const idea = ideationJob.result.ideas[ideaIndex];
+        if (idea) {
+          ideationContext = [
+            `Title: ${idea.title}`,
+            `Core Topic: ${idea.coreTopic}`,
+            `Unique Angle: ${idea.uniqueAngle}`,
+            `Hook Angle: ${idea.hookAngle}`,
+            `Why It Works: ${idea.whyItWorks}`,
+            `Suggested Format: ${idea.suggestedFormat}`,
+            idea.talkingPoints?.length ? `Talking Points: ${idea.talkingPoints.join('; ')}` : '',
+          ].filter(Boolean).join('\n');
+        }
+      }
+    }
 
     const { data: job, error: jobError } = await this.supabaseService
       .getClient()
@@ -44,10 +74,14 @@ export class StoryBuilderService {
         user_id: userId,
         video_topic: videoTopic,
         target_audience: targetAudience || null,
+        audience_level: audienceLevel,
         video_duration: videoDuration,
         content_type: contentType,
+        story_mode: storyMode,
         tone: tone || null,
         additional_context: additionalContext || null,
+        ideation_id: ideationId || null,
+        idea_index: ideaIndex ?? null,
         status: 'queued',
       })
       .select()
@@ -65,11 +99,14 @@ export class StoryBuilderService {
         storyJobId: job.id,
         videoTopic,
         targetAudience: targetAudience || '',
+        audienceLevel,
         videoDuration,
         contentType,
+        storyMode,
         tone: tone || '',
         additionalContext: additionalContext || '',
         personalized: shouldPersonalize,
+        ideationContext,
       },
       {
         jobId: bullJobId,
@@ -90,8 +127,8 @@ export class StoryBuilderService {
       status: 'queued',
       personalized: shouldPersonalize,
       message: shouldPersonalize
-        ? 'Story structure generation queued (personalized to your style)'
-        : 'Story structure generation queued',
+        ? 'Story blueprint generation queued (personalized to your style)'
+        : 'Story blueprint generation queued',
     };
   }
 

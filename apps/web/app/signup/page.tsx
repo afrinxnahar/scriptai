@@ -54,7 +54,7 @@ function SignupForm() {
       try {
         await api.post("/api/v1/referral/track", { referralCode, userEmail });
         toast.success("Referral tracked!", {
-          description: "You've been referred to Script AI! Welcome!",
+          description: "You've been referred to Creator AI! Welcome!",
         });
         setShowReferralBanner(false);
       } catch (err) {
@@ -206,7 +206,7 @@ function SignupForm() {
           className="hidden flex-col justify-center gap-4 md:flex"
         >
           <Link href="/">
-            <Image src={logo} alt="Script AI" width={80} height={80} className="mb-4" />
+            <Image src={logo} alt="Creator AI" width={80} height={80} className="mb-4" />
           </Link>
           <h1 className="text-4xl lg:text-5xl font-bold text-slate-900">Start Building Smarter, Faster.</h1>
           <p className="max-w-md text-lg text-slate-600">Join the revolution in automated content creation. Create your free account to get started.</p>
@@ -221,7 +221,7 @@ function SignupForm() {
           <Card className="w-full max-w-md bg-white/30 dark:bg-black/20 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl h-full bg-clip-padding backdrop-filter bg-opacity-20">
             <CardHeader className="space-y-4 pt-8">
               <div className="flex justify-center md:hidden">
-                <Image src={logo} alt="Script AI" width={60} height={60} />
+                <Image src={logo} alt="Creator AI" width={60} height={60} />
               </div>
               <CardTitle className="text-2xl text-center text-slate-900 dark:text-white">Create an account</CardTitle>
 

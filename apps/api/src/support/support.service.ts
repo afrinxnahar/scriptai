@@ -18,7 +18,7 @@ export class SupportService {
     if (!this.resend) throw new InternalServerErrorException('Email service not configured');
 
     const { data, error } = await this.resend.emails.send({
-      from: 'Script AI <notifications@tryscriptai.com>',
+      from: 'Creator AI <notifications@tryscriptai.com>',
       to: 'afrin@tryscriptai.com',
       subject,
       html: `<div style="font-family: Arial, sans-serif; color: #333; background: #f9f9f9; padding: 20px;">

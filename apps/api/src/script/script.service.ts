@@ -1,68 +1,145 @@
 import {
   Injectable,
-  NotFoundException,
   ForbiddenException,
   InternalServerErrorException,
+  NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { SupabaseService } from '../supabase/supabase.service';
+import { type CreateScriptInput, hasEnoughCredits, getMinimumCreditsForGemini } from '@repo/validation';
 import { PDFDocument, rgb, StandardFonts, PDFFont, PDFPage } from 'pdf-lib';
 import { marked, Tokens } from 'marked';
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 
 type Token = Tokens.Generic;
 type Part = { text: string } | { fileData: { fileUri: string; mimeType: string } };
 type FontSet = { regular: PDFFont; bold: PDFFont; italic: PDFFont };
 
-const SCRIPT_RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    title: { type: 'string', description: 'Suggested script title' },
-    script: { type: 'string', description: 'Full script as a string' },
-  },
-  required: ['title', 'script'],
-} as const;
-
-export interface GenerateScriptParams {
-  prompt: string;
-  context?: string;
-  tone?: string;
-  includeStorytelling: boolean;
-  includeTimestamps: boolean;
-  duration: string;
-  references?: string;
-  language: string;
-  personalized: boolean;
-}
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = [
+  'application/pdf', 'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain', 'image/jpeg', 'image/png', 'image/jpg', 'image/webp',
+];
 
 @Injectable()
 export class ScriptService {
   constructor(
     private readonly supabaseService: SupabaseService,
-    private readonly configService: ConfigService,
-  ) {}
+    @InjectQueue('script') private readonly queue: Queue,
+  ) { }
 
   private get supabase() {
     return this.supabaseService.getClient();
   }
 
-  private async getGoogleAI(): Promise<any> {
-    const apiKey = this.configService.get<string>('GOOGLE_GENERATIVE_AI_API_KEY');
-    if (!apiKey) throw new InternalServerErrorException('Google AI API key not configured');
-    const { GoogleGenAI } = await (Function('return import("@google/genai")')() as Promise<any>);
-    return new GoogleGenAI({ apiKey });
+  async createJob(
+    userId: string,
+    input: CreateScriptInput,
+    files: Express.Multer.File[] = [],
+  ) {
+    const { prompt, context, tone, language, duration, includeStorytelling, includeTimestamps, references, personalized } = input;
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) throw new BadRequestException(`File ${file.originalname} exceeds 10MB limit`);
+      if (!ALLOWED_FILE_TYPES.includes(file.mimetype)) throw new BadRequestException(`File type ${file.mimetype} not supported`);
+    }
+
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .select('credits, ai_trained, youtube_connected')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !profile) throw new NotFoundException('Profile not found');
+    const minCredits = getMinimumCreditsForGemini();
+    if (!hasEnoughCredits(profile.credits, minCredits)) {
+      throw new ForbiddenException(`Insufficient credits. Need at least ${minCredits}, have ${profile.credits}.`);
+    }
+
+    const shouldPersonalize = personalized !== false && profile.ai_trained === true;
+    const bullJobId = `script-${userId}-${Date.now()}`;
+
+    const fileUrls: string[] = [];
+    for (const file of files) {
+      const filePath = `${userId}/scripts/${bullJobId}/${file.originalname}`;
+      const { error } = await this.supabase
+        .storage.from('scripts')
+        .upload(filePath, file.buffer, { contentType: file.mimetype, upsert: true });
+      if (!error) {
+        const { data: { publicUrl } } = this.supabase.storage.from('scripts').getPublicUrl(filePath);
+        fileUrls.push(publicUrl);
+      }
+    }
+
+    const { data: job, error: jobError } = await this.supabase
+      .from('scripts')
+      .insert({
+        user_id: userId,
+        title: 'Generating...',
+        content: '',
+        prompt,
+        context: context || null,
+        tone,
+        language,
+        duration,
+        include_storytelling: includeStorytelling,
+        include_timestamps: includeTimestamps,
+        reference_links: references || null,
+        status: 'queued',
+        job_id: bullJobId,
+        credits_consumed: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (jobError || !job) throw new InternalServerErrorException('Failed to create script job');
+
+    await this.queue.add(
+      'generate-script',
+      {
+        userId,
+        scriptJobId: job.id,
+        prompt,
+        context: context || '',
+        tone,
+        language,
+        duration,
+        includeStorytelling,
+        includeTimestamps,
+        references: references || '',
+        personalized: shouldPersonalize,
+        fileUrls,
+      },
+      {
+        jobId: bullJobId,
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
+    );
+
+    return {
+      id: job.id,
+      jobId: bullJobId,
+      status: 'queued',
+      message: shouldPersonalize
+        ? 'Script generation queued (personalized to your style)'
+        : 'Script generation queued',
+    };
   }
 
   async list(userId: string) {
     const { data, error } = await this.supabase
       .from('scripts')
-      .select('*')
+      .select('id, title, content, status, credits_consumed, created_at, updated_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
 
     if (error) throw new InternalServerErrorException('Error fetching scripts');
     return data;
@@ -106,145 +183,38 @@ export class ScriptService {
     return { message: 'Script deleted successfully' };
   }
 
-  async generate(
-    userId: string,
-    params: GenerateScriptParams,
-    files: Express.Multer.File[],
+  private async embedLogo(pdfDoc: PDFDocument) {
+    const candidates = [
+      path.resolve(process.cwd(), 'apps/web/public/dark-logo.png'),
+      path.resolve(__dirname, '../../../../apps/web/public/dark-logo.png'),
+    ];
+    for (const p of candidates) {
+      try {
+        if (fs.existsSync(p)) return pdfDoc.embedPng(fs.readFileSync(p));
+      } catch { /* skip */ }
+    }
+    return null;
+  }
+
+  private drawPageFooter(
+    page: PDFPage,
+    fonts: FontSet,
+    pageNum: number,
+    totalPages: number,
+    width: number,
+    margins: { bottom: number; left: number; right: number },
   ) {
-    if (!params.prompt) throw new BadRequestException('Prompt is required');
-
-    const { data: profileData, error: profileError } = await this.supabase
-      .from('profiles')
-      .select('credits, ai_trained, youtube_connected')
-      .eq('user_id', userId)
-      .single();
-
-    if (profileError || !profileData) throw new NotFoundException('Profile not found');
-    if (!profileData.ai_trained && !profileData.youtube_connected) {
-      throw new ForbiddenException('AI training and YouTube connection are required');
-    }
-    if (profileData.credits < 1) {
-      throw new ForbiddenException('Insufficient credits. Please upgrade your plan or earn more credits.');
-    }
-
-    let channelData: any = null;
-    let styleData: any = null;
-
-    if (params.personalized && profileData.ai_trained) {
-      const { data: channel } = await this.supabase
-        .from('youtube_channels')
-        .select('channel_name, channel_description, topic_details, default_language')
-        .eq('user_id', userId)
-        .single();
-      channelData = channel;
-
-      const { data: style } = await this.supabase
-        .from('user_style')
-        .select('tone, vocabulary_level, pacing, themes, humor_style, structure, style_analysis, recommendations')
-        .eq('user_id', userId)
-        .single();
-      styleData = style;
-    }
-
-    const ai = await this.getGoogleAI();
-
-    const geminiPrompt = `
-Generate a unique YouTube video script based on the following details:
-- Prompt: ${params.prompt}
-- Context: ${params.context || 'None'}
-- Desired Tone: ${params.tone || styleData?.tone || 'conversational'}
-- Language: ${params.language || channelData?.default_language || 'English'}
-- Include Storytelling: ${params.includeStorytelling}
-- Include Timestamps: ${params.includeTimestamps}
-- Duration: ${params.duration}
-- References: ${params.references || 'None'}
-
-${params.personalized && styleData ? `
-Creator's Style Profile:
-- Channel Name: ${channelData?.channel_name || 'Unknown'}
-- Channel Description: ${channelData?.channel_description || 'None'}
-- Content Style: ${styleData.style_analysis}
-- Typical Tone: ${styleData.tone}
-- Vocabulary Level: ${styleData.vocabulary_level}
-- Pacing: ${styleData.pacing}
-- Themes: ${styleData.themes}
-- Humor Style: ${styleData.humor_style}
-- Narrative Structure: ${styleData.structure}
-- Recommendations: ${JSON.stringify(styleData.recommendations)}
-` : ''}
-
-Generate a compelling, engaging title and a complete script. Use Creator's style profile for more personalizzed experience.
-`;
-
-    const uploadedFiles: any[] = [];
-    for (const file of files) {
-      const tempFilePath = path.join(os.tmpdir(), file.originalname);
-      await fs.writeFile(tempFilePath, file.buffer);
-      const uploaded = await ai.files.upload({
-        file: tempFilePath,
-        config: { mimeType: file.mimetype },
-      });
-      uploadedFiles.push(uploaded);
-    }
-
-    const parts: Part[] = [{ text: geminiPrompt }];
-    for (const uploaded of uploadedFiles) {
-      parts.push({ text: `Consider this file as a reference: ${uploaded.name ?? ''}` });
-      parts.push({ fileData: { fileUri: uploaded.uri, mimeType: uploaded.mimeType } });
-    }
-
-    let result: any;
-    try {
-      result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts }],
-        config: {
-          responseMimeType: 'application/json',
-          responseJsonSchema: SCRIPT_RESPONSE_SCHEMA,
-        },
-      });
-    } catch {
-      throw new InternalServerErrorException('Failed to generate script from Gemini API');
-    }
-
-    const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? result?.text;
-    if (!rawText) throw new InternalServerErrorException('AI returned an empty response');
-
-    let response: { title: string; script: string };
-    try {
-      response = JSON.parse(rawText);
-    } catch {
-      throw new InternalServerErrorException('Failed to parse Gemini response');
-    }
-
-    const { error: updateError } = await this.supabase
-      .from('profiles')
-      .update({ credits: profileData.credits - 1 })
-      .eq('user_id', userId);
-    if (updateError) throw new InternalServerErrorException('Failed to update credits');
-
-    const { data: saved, error: insertError } = await this.supabase
-      .from('scripts')
-      .insert({
-        user_id: userId,
-        title: response.title,
-        content: response.script,
-        prompt: params.prompt,
-        context: params.context,
-        tone: params.tone,
-        include_storytelling: params.includeStorytelling,
-        include_timestamps: params.includeTimestamps,
-        duration: params.duration,
-        reference_links: params.references,
-        language: params.language,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (insertError) throw new InternalServerErrorException('Failed to save script');
-    return { id: saved.id, title: response.title, script: response.script };
+    const footerY = margins.bottom - 30;
+    const brand = 'Generated by Creator AI';
+    const pageText = `Page ${pageNum} of ${totalPages}`;
+    page.drawText(brand, { x: margins.left, y: footerY, font: fonts.italic, size: 8, color: rgb(0.55, 0.55, 0.55) });
+    const pageTextWidth = fonts.regular.widthOfTextAtSize(pageText, 8);
+    page.drawText(pageText, { x: width - margins.right - pageTextWidth, y: footerY, font: fonts.regular, size: 8, color: rgb(0.55, 0.55, 0.55) });
+    page.drawLine({
+      start: { x: margins.left, y: footerY + 12 },
+      end: { x: width - margins.right, y: footerY + 12 },
+      thickness: 0.4, color: rgb(0.85, 0.85, 0.85),
+    });
   }
 
   async exportPdf(id: string, userId: string): Promise<{ pdfBytes: Uint8Array; filename: string }> {
@@ -255,64 +225,114 @@ Generate a compelling, engaging title and a complete script. Use Creator's style
       bold: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
       italic: await pdfDoc.embedFont(StandardFonts.HelveticaOblique),
     };
+    const logo = await this.embedLogo(pdfDoc);
+    const purple = rgb(0.49, 0.27, 0.83);
 
     pdfDoc.setTitle(script.title);
-    const margins = { top: 70, bottom: 70, left: 70, right: 70 };
+    pdfDoc.setCreator('Creator AI');
+    const margins = { top: 70, bottom: 70, left: 60, right: 60 };
+    const pages: PDFPage[] = [];
     let page = pdfDoc.addPage([595.28, 841.89]);
+    pages.push(page);
     const { width, height } = page.getSize();
     const contentWidth = width - margins.left - margins.right;
     let currentY = height - margins.top;
 
-    page.drawText(script.title, {
-      x: margins.left, y: currentY, font: fonts.bold, size: 24,
-      maxWidth: contentWidth, lineHeight: 30,
-    });
-    currentY -= 50;
+    // --- Brand header ---
+    const logoSize = 28;
+    if (logo) {
+      const dims = logo.scaleToFit(logoSize, logoSize);
+      page.drawImage(logo, { x: margins.left, y: currentY - dims.height + 6, width: dims.width, height: dims.height });
+    }
+    const brandX = logo ? margins.left + logoSize + 10 : margins.left;
+    page.drawText('Creator AI', { x: brandX, y: currentY - 6, font: fonts.bold, size: 16, color: purple });
 
-    const updatedDate = new Date(script.updated_at).toLocaleDateString();
-    const metadata = `Updated: ${updatedDate} | Language: ${script.language} | Tone: ${script.tone || 'N/A'}`;
-    page.drawText(metadata, {
-      x: margins.left, y: currentY, font: fonts.regular, size: 10,
-      maxWidth: contentWidth, lineHeight: 14,
-    });
-    currentY -= 20;
+    const dateStr = new Date(script.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const dateWidth = fonts.regular.widthOfTextAtSize(dateStr, 9);
+    page.drawText(dateStr, { x: width - margins.right - dateWidth, y: currentY - 4, font: fonts.regular, size: 9, color: rgb(0.55, 0.55, 0.55) });
+    currentY -= 35;
 
     page.drawLine({
       start: { x: margins.left, y: currentY },
       end: { x: width - margins.right, y: currentY },
-      thickness: 0.5, color: rgb(0.8, 0.8, 0.8),
+      thickness: 1.5, color: purple,
     });
-    currentY -= 25;
+    currentY -= 30;
 
-    const tokens = marked.lexer(script.content);
+    // --- Title ---
+    page.drawText(script.title, {
+      x: margins.left, y: currentY, font: fonts.bold, size: 22,
+      maxWidth: contentWidth, lineHeight: 28, color: rgb(0.1, 0.1, 0.1),
+    });
+    const titleLines = Math.ceil(fonts.bold.widthOfTextAtSize(script.title, 22) / contentWidth);
+    currentY -= titleLines * 28 + 10;
+
+    // --- Metadata chips ---
+    const chips = [
+      script.language,
+      script.tone ? `Tone: ${script.tone}` : null,
+      script.duration ? `Duration: ${script.duration}` : null,
+    ].filter(Boolean) as string[];
+    if (chips.length) {
+      let chipX = margins.left;
+      for (const chip of chips) {
+        const chipW = fonts.regular.widthOfTextAtSize(chip, 9) + 16;
+        page.drawRectangle({ x: chipX, y: currentY - 4, width: chipW, height: 18, color: rgb(0.95, 0.93, 0.99) });
+        page.drawText(chip, { x: chipX + 8, y: currentY, font: fonts.regular, size: 9, color: rgb(0.35, 0.2, 0.6) });
+        chipX += chipW + 8;
+      }
+      currentY -= 32;
+    }
+
+    page.drawLine({
+      start: { x: margins.left, y: currentY },
+      end: { x: width - margins.right, y: currentY },
+      thickness: 0.4, color: rgb(0.88, 0.88, 0.88),
+    });
+    currentY -= 20;
+
+    // --- Body content ---
+    const tokens = marked.lexer(script.content || '');
     for (const token of tokens) {
       if (currentY < margins.bottom) {
         page = pdfDoc.addPage();
+        pages.push(page);
         currentY = height - margins.top;
       }
 
       switch (token.type) {
         case 'heading': {
-          const res = this.drawMarkdownTokens(token.tokens || [], {
-            doc: pdfDoc, page, fonts, x: margins.left, y: currentY,
-            maxWidth: contentWidth, lineHeight: 20,
-            baseSize: 20 - (token as any).depth * 2, margins,
+          currentY -= 6;
+          const depth = (token as any).depth ?? 1;
+          const headingSize = Math.max(12, 20 - depth * 2);
+          page.drawLine({
+            start: { x: margins.left, y: currentY + headingSize + 2 },
+            end: { x: margins.left + 3, y: currentY + 2 },
+            thickness: 3, color: purple,
           });
-          page = res.page; currentY = res.y - 10;
+          const res = this.drawMarkdownTokens(token.tokens || [], {
+            doc: pdfDoc, page, fonts, x: margins.left + 8, y: currentY,
+            maxWidth: contentWidth - 8, lineHeight: headingSize + 4,
+            baseSize: headingSize, margins,
+          });
+          page = res.page; currentY = res.y - 8;
           break;
         }
         case 'paragraph': {
           const res = this.drawMarkdownTokens(token.tokens || [], {
             doc: pdfDoc, page, fonts, x: margins.left, y: currentY,
-            maxWidth: contentWidth, lineHeight: 18, baseSize: 12, margins,
+            maxWidth: contentWidth, lineHeight: 18, baseSize: 11, margins,
           });
-          page = res.page; currentY = res.y - 5;
+          page = res.page; currentY = res.y - 6;
           break;
         }
         case 'blockquote': {
+          page.drawRectangle({
+            x: margins.left, y: currentY - 60, width: 3, height: 60, color: purple,
+          });
           const res = this.drawMarkdownTokens(token.tokens || [], {
-            doc: pdfDoc, page, fonts, x: margins.left + 20, y: currentY,
-            maxWidth: contentWidth - 20, lineHeight: 16, baseSize: 12, margins,
+            doc: pdfDoc, page, fonts, x: margins.left + 14, y: currentY,
+            maxWidth: contentWidth - 14, lineHeight: 17, baseSize: 11, margins,
           });
           page = res.page; currentY = res.y - 10;
           break;
@@ -321,22 +341,27 @@ Generate a compelling, engaging title and a complete script. Use Creator's style
           for (const item of (token as any).items) {
             if (currentY < margins.bottom) {
               page = pdfDoc.addPage();
+              pages.push(page);
               currentY = height - margins.top;
             }
-            page.drawText('•', { x: margins.left + 10, y: currentY, font: fonts.regular, size: 12 });
+            page.drawCircle({ x: margins.left + 10, y: currentY + 3, size: 2.5, color: purple });
             const res = this.drawMarkdownTokens(item.tokens || [], {
-              doc: pdfDoc, page, fonts, x: margins.left + 25, y: currentY,
-              maxWidth: contentWidth - 25, lineHeight: 16, baseSize: 12, margins,
+              doc: pdfDoc, page, fonts, x: margins.left + 20, y: currentY,
+              maxWidth: contentWidth - 20, lineHeight: 17, baseSize: 11, margins,
             });
             page = res.page; currentY = res.y;
           }
-          currentY -= 10;
+          currentY -= 8;
           break;
         case 'space':
-          currentY -= 12;
+          currentY -= 10;
           break;
       }
     }
+
+    // --- Page footers ---
+    const totalPages = pages.length;
+    pages.forEach((p, i) => this.drawPageFooter(p, fonts, i + 1, totalPages, width, margins));
 
     const pdfBytes = await pdfDoc.save();
     return { pdfBytes, filename: `${script.title.replace(/[^a-z0-9]/gi, '_')}.pdf` };

@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md mx-auto mb-16">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center items-center">
-            {logo && <Image src={logo} alt="Script AI" width={100} height={100} className="mb-4" />}
+            {logo && <Image src={logo} alt="Creator AI" width={100} height={100} className="mb-4" />}
           </div>
           <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
           <CardDescription>

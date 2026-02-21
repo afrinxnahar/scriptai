@@ -1,12 +1,12 @@
 "use client"
 
-import { motion } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { motion } from "motion/react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Clock, BookOpen, AlertCircle, Eye, Trash2 } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton";
-import { CONTENT_TYPE_LABELS, VIDEO_DURATION_LABELS } from "@repo/validation";
+import { Skeleton } from "@/components/ui/skeleton"
+import { CONTENT_TYPE_LABELS, VIDEO_DURATION_LABELS, STORY_MODE_LABELS } from "@repo/validation"
 import type { StoryBuilderJob } from "@/hooks/useStoryBuilder"
 
 interface StoryBuilderHistoryProps {
@@ -29,14 +29,11 @@ export function StoryBuilderHistory({ jobs, isLoading, onView, onDelete }: Story
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Recent Story Blueprints
+            <Clock className="h-5 w-5" /> Recent Story Blueprints
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
-          ))}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
         </CardContent>
       </Card>
     )
@@ -47,15 +44,14 @@ export function StoryBuilderHistory({ jobs, isLoading, onView, onDelete }: Story
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Recent Story Blueprints
+            <Clock className="h-5 w-5" /> Recent Story Blueprints
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-slate-500 dark:text-slate-400">
             <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-40" />
             <p>No story blueprints generated yet</p>
-            <p className="text-sm mt-1">Your generated story structures will appear here</p>
+            <p className="text-sm mt-1">Your generated blueprints will appear here</p>
           </div>
         </CardContent>
       </Card>
@@ -66,14 +62,12 @@ export function StoryBuilderHistory({ jobs, isLoading, onView, onDelete }: Story
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Recent Story Blueprints
+          <Clock className="h-5 w-5" /> Recent Story Blueprints
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {jobs.map((job, idx) => {
           const config = statusConfig[job.status] || statusConfig.queued
-
           return (
             <motion.div
               key={job.id}
@@ -86,36 +80,28 @@ export function StoryBuilderHistory({ jobs, isLoading, onView, onDelete }: Story
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{job.video_topic}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <Badge variant={config && config.variant} className="text-xs">
-                      {config && config.label}
-                    </Badge>
+                    <Badge variant={config.variant} className="text-xs">{config.label}</Badge>
                     <span className="text-xs text-slate-500">
-                      {CONTENT_TYPE_LABELS[job.content_type]} · {VIDEO_DURATION_LABELS[job.video_duration]}
+                      {CONTENT_TYPE_LABELS[job.content_type] || job.content_type}
+                      {' · '}
+                      {VIDEO_DURATION_LABELS[job.video_duration]}
+                      {job.story_mode && ` · ${STORY_MODE_LABELS[job.story_mode] || job.story_mode}`}
                     </span>
                     <span className="text-xs text-slate-400">
                       {new Date(job.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-
                 <div className="flex gap-1 shrink-0">
                   {job.status === 'completed' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onView(job)}
-                      title="View result"
-                    >
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(job)} title="View">
                       <Eye className="h-4 w-4" />
                     </Button>
                   )}
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="ghost" size="icon"
                     className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => onDelete(job.id)}
-                    title="Delete"
+                    onClick={() => onDelete(job.id)} title="Delete"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -131,15 +117,22 @@ export function StoryBuilderHistory({ jobs, isLoading, onView, onDelete }: Story
 
               {job.status === 'completed' && job.result && (
                 <div className="flex gap-2 flex-wrap">
+                  {job.result.tensionMapping && (
+                    <Badge variant="outline" className="text-xs">
+                      Score: {job.result.tensionMapping.retentionScore}/10
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-xs">
+                    {job.result.structuredBlueprint?.escalationSegments?.length || 0} segments
+                  </Badge>
                   <Badge variant="outline" className="text-xs">
                     {job.result.retentionBeats?.length || 0} retention beats
                   </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {job.result.openLoops?.length || 0} open loops
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {job.result.patternInterrupts?.length || 0} pattern interrupts
-                  </Badge>
+                  {job.result.tensionMapping && (
+                    <Badge variant="outline" className="text-xs capitalize">
+                      Drop: {job.result.tensionMapping.predictedDropRisk}
+                    </Badge>
+                  )}
                 </div>
               )}
             </motion.div>

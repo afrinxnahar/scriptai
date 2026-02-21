@@ -20,6 +20,7 @@ import {
     Loader2,
     Languages,
     ImageIcon,
+    Clapperboard,
 } from "lucide-react";
 
 import {
@@ -47,7 +48,7 @@ interface ContentCardProps {
     onDelete: () => Promise<void>;
     onExport?: (scriptId: string) => Promise<void>;
     setToDelete: (id: string | null) => void;
-    type: "scripts" | "research" | "dubbing" | "thumbnails";
+    type: "scripts" | "research" | "dubbing" | "thumbnails" | "subtitles";
     imagePreview?: string;
     statusBadge?: React.ReactNode;
 }
@@ -69,15 +70,18 @@ export function ContentCard({
 
     // Dynamic values based on type
     const linkHref = `/dashboard/${type}/${id}`;
-    const Icon = type === "scripts" ? FileText : type === "dubbing" ? Languages : type === "thumbnails" ? ImageIcon : BookOpen;
-    const deleteLabel = type === "scripts" ? "Delete Script" : type === "dubbing" ? "Delete Dubbing" : type === "thumbnails" ? "Delete Thumbnail" : "Delete Research";
-    const dialogDescription = type === "scripts"
-        ? "This will permanently delete your script and all its associated data."
-        : type === "dubbing"
-            ? "This will permanently delete your dubbed media and all its associated data."
-            : type === "thumbnails"
-                ? "This will permanently delete this thumbnail job and all its generated images."
-                : "This will permanently delete your research and all its associated data.";
+    const iconMap = { scripts: FileText, dubbing: Languages, thumbnails: ImageIcon, subtitles: Clapperboard, research: BookOpen };
+    const Icon = iconMap[type] || BookOpen;
+    const labelMap = { scripts: "Delete Script", dubbing: "Delete Dubbing", thumbnails: "Delete Thumbnail", subtitles: "Delete Subtitle", research: "Delete Research" };
+    const deleteLabel = labelMap[type];
+    const descMap = {
+        scripts: "This will permanently delete your script and all its associated data.",
+        dubbing: "This will permanently delete your dubbed media and all its associated data.",
+        thumbnails: "This will permanently delete this thumbnail job and all its generated images.",
+        subtitles: "This will permanently delete this subtitle project and all its associated data.",
+        research: "This will permanently delete your research and all its associated data.",
+    };
+    const dialogDescription = descMap[type];
 
 
     const handleExport = () => {

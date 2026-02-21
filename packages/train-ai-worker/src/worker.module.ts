@@ -5,6 +5,8 @@ import * as path from 'path';
 import { TrainAiProcessor } from './processor/train-ai.processor';
 import { ThumbnailProcessor } from './processor/thumbnail.processor';
 import { StoryBuilderProcessor } from './processor/story-builder.processor';
+import { IdeationProcessor } from './processor/ideation.processor';
+import { ScriptProcessor } from './processor/script.processor';
 
 @Module({
   imports: [
@@ -28,8 +30,10 @@ import { StoryBuilderProcessor } from './processor/story-builder.processor';
       { name: 'train-ai' },
       { name: 'thumbnail' },
       { name: 'story-builder' },
+      { name: 'ideation' },
+      { name: 'script' },
     ),
   ],
-  providers: [TrainAiProcessor, ThumbnailProcessor, StoryBuilderProcessor],
+  providers: [TrainAiProcessor, ThumbnailProcessor, StoryBuilderProcessor, IdeationProcessor, ScriptProcessor],
 })
 export class WorkerModule {}

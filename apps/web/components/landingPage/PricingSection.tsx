@@ -9,7 +9,7 @@ export default function PricingSection() {
             "500 free credits/month",
             "Connect YouTube channel",
             "AI model training",
-            "New idea research",
+            "Ideation",
             "Script generation",
             "Thumbnail generation",
             "Subtitle generation",
@@ -110,7 +110,7 @@ export default function PricingSection() {
                                     ? "For professional YouTubers and teams."
                                     : plan.name === "Pro"
                                         ? "For serious content creators."
-                                        : "Perfect for trying out Script AI."}
+                                        : "Perfect for trying out Creator AI."}
                             </p>
 
                             <ul className="space-y-2 mb-4 sm:mb-6 flex-1">

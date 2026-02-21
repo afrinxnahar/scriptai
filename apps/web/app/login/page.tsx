@@ -144,7 +144,7 @@ export default function LoginPage() {
             className="hidden flex-col justify-center gap-4 md:flex"
           >
             <Link href="/">
-              <Image src={logo} alt="Script AI" width={80} height={80} className="mb-4" />
+              <Image src={logo} alt="Creator AI" width={80} height={80} className="mb-4" />
             </Link>
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-900">
               The Future of Content Creation is Here.
@@ -169,7 +169,7 @@ export default function LoginPage() {
               <CardHeader className="space-y-1 pt-6">
                 {/* Mobile Logo inside card */}
                 <div className="flex justify-center md:hidden">
-                  <Image src={logo} alt="Script AI" width={60} height={60} />
+                  <Image src={logo} alt="Creator AI" width={60} height={60} />
                 </div>
                 <CardTitle className="text-2xl text-center text-slate-900 dark:text-white">
                   Welcome back

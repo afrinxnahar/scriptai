@@ -1,46 +1,46 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, Req, Res, UseGuards, UseInterceptors, UploadedFiles,
+  Param, Body, Req, Res, Sse, UseGuards, UseInterceptors, UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { Response } from 'express';
+import { Observable } from 'rxjs';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { CreateScriptSchema, type CreateScriptInput } from '@repo/validation';
 import { getUserId } from '../common/get-user-id';
 import type { AuthRequest } from '../common/interfaces/auth-request.interface';
-import { ScriptService, GenerateScriptParams } from './script.service';
+import { ScriptService } from './script.service';
+import { createJobSSE } from '../common/sse';
 
 @Controller('script')
-@UseGuards(SupabaseAuthGuard)
 export class ScriptController {
-  constructor(private readonly scriptService: ScriptService) {}
+  constructor(
+    @InjectQueue('script') private readonly queue: Queue,
+    private readonly scriptService: ScriptService,
+  ) {}
+
+  @Post('generate')
+  @UseGuards(SupabaseAuthGuard)
+  @UseInterceptors(FilesInterceptor('files'))
+  generate(
+    @Body(new ZodValidationPipe(CreateScriptSchema)) body: CreateScriptInput,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: AuthRequest,
+  ) {
+    return this.scriptService.createJob(getUserId(req), body, files || []);
+  }
 
   @Get()
+  @UseGuards(SupabaseAuthGuard)
   list(@Req() req: AuthRequest) {
     return this.scriptService.list(getUserId(req));
   }
 
-  @Post('generate')
-  @UseInterceptors(FilesInterceptor('files'))
-  generate(
-    @Body() body: Record<string, string>,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Req() req: AuthRequest,
-  ) {
-    const params: GenerateScriptParams = {
-      prompt: body.prompt,
-      context: body.context,
-      tone: body.tone,
-      includeStorytelling: body.includeStorytelling === 'true',
-      includeTimestamps: body.includeTimestamps === 'true',
-      duration: body.duration,
-      references: body.references,
-      language: body.language,
-      personalized: body.personalized === 'true',
-    };
-    return this.scriptService.generate(getUserId(req), params, files || []);
-  }
-
   @Get(':id/export')
+  @UseGuards(SupabaseAuthGuard)
   async exportPdf(
     @Param('id') id: string,
     @Req() req: AuthRequest,
@@ -55,11 +55,13 @@ export class ScriptController {
   }
 
   @Get(':id')
+  @UseGuards(SupabaseAuthGuard)
   getOne(@Param('id') id: string, @Req() req: AuthRequest) {
     return this.scriptService.getOne(id, getUserId(req));
   }
 
   @Patch(':id')
+  @UseGuards(SupabaseAuthGuard)
   update(
     @Param('id') id: string,
     @Body() body: { title: string; content: string },
@@ -69,7 +71,27 @@ export class ScriptController {
   }
 
   @Delete(':id')
+  @UseGuards(SupabaseAuthGuard)
   remove(@Param('id') id: string, @Req() req: AuthRequest) {
     return this.scriptService.remove(id, getUserId(req));
+  }
+
+  @Sse('status/:jobId')
+  status(@Param('jobId') jobId: string, @Req() req: AuthRequest): Observable<MessageEvent> {
+    return createJobSSE({
+      queue: this.queue,
+      jobId,
+      req,
+      getMessages: {
+        active: 'Generating your script...',
+        completed: 'Script generated!',
+        failed: 'Generation failed',
+      },
+      extractResult: (job) => ({
+        title: job.returnvalue?.title,
+        script: job.returnvalue?.script,
+        creditsConsumed: job.returnvalue?.creditsConsumed ?? 0,
+      }),
+    });
   }
 }

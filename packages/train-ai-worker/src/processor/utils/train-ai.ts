@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { manageAccessToken, validateOAuthEnvironment } from "./token-manager";
-import { ChannelData, StyleAnalysis, Thumbnail, Transcript, VideoData } from "@repo/validation";
+import { ChannelData, ChannelIntelligence, StyleAnalysis, Thumbnail, Transcript, VideoData } from "@repo/validation";
 import type { SupabaseClient } from "@repo/supabase";
 import axios from "axios";
 import { calculateRetryDelay, logError, shouldRetry } from "./error-handler";
@@ -130,7 +130,13 @@ export async function analyzeStyle(
   totalStyleTokens: number;
 }> {
   const prompt = `
-Analyze the following YouTube channel and video data to extract the creator's content style, which will be used for generating scripts, research topics, thumbnails, subtitles, audio conversions, and story structure blueprints. Provide a detailed analysis of the following aspects: tone (e.g., conversational, formal), vocabulary level (e.g., simple, technical), pacing (e.g., fast, slow), themes (e.g., educational, entertainment), humor style (e.g., witty, sarcastic), narrative structure (e.g., storytelling, listicle), visual style, thumbnails and descriptions, and audience engagement techniques (e.g., calls to action, audience questions). Additionally, include a comprehensive narrative overview of the creator's overall content style in the style_analysis field, synthesizing all aspects into a cohesive summary.
+Analyze the following YouTube channel and video data to extract the creator's content style, which will be used for generating scripts, research topics, thumbnails, subtitles, audio conversions, and story structure blueprints.
+
+Analyze these aspects:
+- tone (e.g., conversational, formal), vocabulary level, pacing, themes, humor style, narrative structure, visual style, thumbnails and descriptions, audience engagement techniques
+- **Script Pacing Analysis**: Determine sentence style (short punchy vs long flowing), average segment/section length in seconds, how often humor is used (rare/occasional/frequent/constant), ratio of direct address vs storytelling narration (0.0 to 1.0), how frequently stats/data points are cited, and the baseline emotional tone
+
+Include a comprehensive narrative overview in the style_analysis field.
 
 Channel Data:
 - Name: ${channelData.channel_name}
@@ -191,7 +197,22 @@ Video ${i + 1}:
           "audio_conversion",
           "story_builder"
         ]
-      }
+      },
+      script_pacing: {
+        type: "object",
+        description: "Detailed script pacing analysis for story builder",
+        properties: {
+          sentenceStyle: { type: "string", description: "short_punchy, mixed, or long_flowing" },
+          avgSentencesPerSegment: { type: "number" },
+          transitionStyle: { type: "string", description: "How the creator transitions between topics" },
+        },
+        required: ["sentenceStyle", "avgSentencesPerSegment", "transitionStyle"]
+      },
+      humor_frequency: { type: "string", description: "rare, occasional, frequent, or constant" },
+      direct_address_ratio: { type: "number", description: "0.0 to 1.0 ratio of direct address vs storytelling" },
+      stats_usage: { type: "string", description: "none, rare, moderate, heavy" },
+      emotional_tone: { type: "string", description: "Baseline emotional tone e.g. optimistic, neutral, intense" },
+      avg_segment_length: { type: "number", description: "Average segment/section length in seconds" }
     },
     required: [
       "style_analysis",
@@ -203,7 +224,13 @@ Video ${i + 1}:
       "narrative_structure",
       "visual_style",
       "audience_engagement",
-      "recommendations"
+      "recommendations",
+      "script_pacing",
+      "humor_frequency",
+      "direct_address_ratio",
+      "stats_usage",
+      "emotional_tone",
+      "avg_segment_length"
     ]
   };
 
@@ -286,6 +313,171 @@ export async function generateEmbedding(
   throw new Error('Max retries reached for embedding');
 }
 
+export async function generateTopicEmbedding(
+  genAI: GoogleGenAI,
+  intelligence: ChannelIntelligence,
+  channelData: ChannelData,
+  maxRetries = 3,
+): Promise<number[]> {
+  const topicText = [
+    channelData.channel_description || '',
+    ...(intelligence.topicClusters || []),
+    ...(intelligence.topVideos?.slice(0, 10).map(v => v.title) || []),
+    ...(intelligence.contentGaps || []),
+  ].filter(Boolean).join(' | ');
+
+  let retryCount = 0;
+  while (retryCount < maxRetries) {
+    try {
+      const response = await genAI.models.embedContent({
+        model: 'gemini-embedding-001',
+        contents: topicText,
+        config: { outputDimensionality: 1536, taskType: 'RETRIEVAL_DOCUMENT' },
+      });
+      const values = response?.embeddings?.[0]?.values;
+      if (!values) throw new Error('Invalid topic embedding response');
+      const norm = Math.sqrt(values.reduce((s: number, v: number) => s + v * v, 0));
+      return norm > 0 ? values.map((v: number) => v / norm) : values;
+    } catch (error) {
+      retryCount++;
+      if (retryCount >= maxRetries) {
+        logError('train-ai-topic-embedding', error, { retryCount });
+        return [];
+      }
+      await new Promise(res => setTimeout(res, 2000));
+    }
+  }
+  return [];
+}
+
+export function extractChannelIntelligence(
+  videoData: VideoData[],
+  transcripts: Transcript[],
+): ChannelIntelligence {
+  const sorted = [...videoData].sort((a, b) => b.viewCount - a.viewCount);
+  const top20 = sorted.slice(0, 20);
+
+  const totalViews = videoData.reduce((s, v) => s + v.viewCount, 0);
+  const totalLikes = videoData.reduce((s, v) => s + v.likeCount, 0);
+  const totalComments = videoData.reduce((s, v) => s + v.commentCount, 0);
+  const count = videoData.length || 1;
+
+  const dates = videoData
+    .map(v => new Date(v.publishedAt).getTime())
+    .filter(d => !isNaN(d))
+    .sort((a, b) => a - b);
+  let uploadFrequencyDays = 7;
+  if (dates.length >= 2) {
+    const gaps: number[] = [];
+    for (let i = 1; i < dates.length; i++) {
+      gaps.push((dates[i]! - dates[i - 1]!) / (1000 * 60 * 60 * 24));
+    }
+    uploadFrequencyDays = Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length);
+  }
+
+  const titleWords = videoData.flatMap(v =>
+    v.title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3)
+  );
+  const wordFreq = new Map<string, number>();
+  titleWords.forEach(w => wordFreq.set(w, (wordFreq.get(w) || 0) + 1));
+  const titlePatterns = [...wordFreq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([word]) => word);
+
+  const hookPatterns: string[] = [];
+  for (const t of transcripts) {
+    const firstSegments = t.segments.filter(s => s.start < 15);
+    if (firstSegments.length) {
+      hookPatterns.push(firstSegments.map(s => s.text).join(' ').slice(0, 200));
+    }
+  }
+
+  const tags = videoData.flatMap(v => v.tags.map(t => t.toLowerCase()));
+  const tagFreq = new Map<string, number>();
+  tags.forEach(t => tagFreq.set(t, (tagFreq.get(t) || 0) + 1));
+  const topicClusters = [...tagFreq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([tag]) => tag);
+
+  return {
+    topVideos: top20.map(v => ({
+      id: v.id,
+      title: v.title,
+      views: v.viewCount,
+      likes: v.likeCount,
+      comments: v.commentCount,
+    })),
+    avgViews: Math.round(totalViews / count),
+    avgLikes: Math.round(totalLikes / count),
+    avgComments: Math.round(totalComments / count),
+    titlePatterns,
+    titleFingerprints: [],
+    hookPatterns: hookPatterns.slice(0, 10),
+    topicClusters,
+    uploadFrequencyDays,
+    bestFormats: [],
+    contentGaps: [],
+  };
+}
+
+export async function enrichChannelIntelligenceWithAI(
+  genAI: GoogleGenAI,
+  intelligence: ChannelIntelligence,
+  channelData: ChannelData,
+  maxRetries = 3,
+): Promise<{ enriched: ChannelIntelligence; tokens: number }> {
+  const prompt = `Analyze this YouTube channel's content patterns and identify:
+1. bestFormats: What content formats work best (e.g., tutorial, listicle, breakdown, commentary, case study, reaction, how-to, comparison). Rank by likely performance.
+2. contentGaps: Topics this channel's niche demands but the creator hasn't covered. Be specific.
+3. titleFingerprints: Extract the recurring structural patterns in the creator's video titles as templates. Examples: "How to [X]", "[Number] Ways to [X]", "[X] vs [Y]", "Why [X] is [Y]", "The Truth About [X]", "I Tried [X] for [Time]". Return 5-10 patterns found.
+
+Channel: ${channelData.channel_name || 'Unknown'}
+Description: ${channelData.channel_description || 'None'}
+Topics: ${JSON.stringify(channelData.topic_details || {})}
+Top Videos: ${intelligence.topVideos.map(v => `"${v.title}" (${v.views} views)`).join(', ')}
+Topic Clusters: ${intelligence.topicClusters.join(', ')}
+Avg Views: ${intelligence.avgViews}`;
+
+  const schema = {
+    type: "object",
+    properties: {
+      bestFormats: { type: "array", items: { type: "string" } },
+      contentGaps: { type: "array", items: { type: "string" } },
+      titleFingerprints: { type: "array", items: { type: "string" }, description: "Structural title patterns like 'How to [X]', '[Number] Ways to [Y]'" },
+    },
+    required: ["bestFormats", "contentGaps", "titleFingerprints"],
+  };
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await genAI.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0 },
+      });
+      const parsed = JSON.parse(result.text);
+      return {
+        enriched: {
+          ...intelligence,
+          bestFormats: parsed.bestFormats || [],
+          contentGaps: parsed.contentGaps || [],
+          titleFingerprints: parsed.titleFingerprints || [],
+        },
+        tokens: result?.usageMetadata?.totalTokenCount ?? 0,
+      };
+    } catch (error) {
+      if (attempt === maxRetries) {
+        logError('train-ai-channel-intelligence', error, { attempt });
+        return { enriched: intelligence, tokens: 0 };
+      }
+      await new Promise(res => setTimeout(res, 2000));
+    }
+  }
+  return { enriched: intelligence, tokens: 0 };
+}
+
 // Save style data to Supabase
 export async function saveStyleData(
   supabase: SupabaseClient,
@@ -295,7 +487,9 @@ export async function saveStyleData(
   videoUrls: string[],
   transcripts: Transcript[],
   thumbnails: Thumbnail[],
-  totalConsumedTokens: number
+  totalConsumedTokens: number,
+  channelIntelligence?: ChannelIntelligence,
+  topicEmbedding?: number[],
 ): Promise<void> {
   const geminiCredits = Math.ceil(totalConsumedTokens / 1000);
 
@@ -306,7 +500,7 @@ export async function saveStyleData(
 
   await supabase.from('profiles').update({ credits: profile.credits - geminiCredits, ai_trained: true }).eq('user_id', userId);
 
-  const styleData = {
+  const styleData: Record<string, any> = {
     user_id: userId,
     tone: styleAnalysis.tone,
     vocabulary_level: styleAnalysis.vocabulary_level,
@@ -329,6 +523,32 @@ export async function saveStyleData(
     gemini_total_tokens: totalConsumedTokens,
     credits_consumed: geminiCredits,
   };
+
+  if ((styleAnalysis as any).script_pacing) {
+    styleData.script_pacing = (styleAnalysis as any).script_pacing;
+  }
+  if ((styleAnalysis as any).humor_frequency) {
+    styleData.humor_frequency = (styleAnalysis as any).humor_frequency;
+  }
+  if ((styleAnalysis as any).direct_address_ratio != null) {
+    styleData.direct_address_ratio = (styleAnalysis as any).direct_address_ratio;
+  }
+  if ((styleAnalysis as any).stats_usage) {
+    styleData.stats_usage = (styleAnalysis as any).stats_usage;
+  }
+  if ((styleAnalysis as any).emotional_tone) {
+    styleData.emotional_tone = (styleAnalysis as any).emotional_tone;
+  }
+  if ((styleAnalysis as any).avg_segment_length != null) {
+    styleData.avg_segment_length = (styleAnalysis as any).avg_segment_length;
+  }
+
+  if (channelIntelligence) {
+    styleData.channel_intelligence = channelIntelligence;
+  }
+  if (topicEmbedding?.length) {
+    styleData.topic_embedding = topicEmbedding;
+  }
 
   const { error } = await supabase.from('user_style').upsert(styleData, { onConflict: 'user_id' });
   if (error) {

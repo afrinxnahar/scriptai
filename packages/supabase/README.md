@@ -1,6 +1,6 @@
-# Script AI - Supabase Schema Documentation
+# Creator AI - Supabase Schema Documentation
 
-**Application:** Script AI - Personalized YouTube Creator Tool  
+**Application:** Creator AI - Personalized YouTube Creator Tool  
 **Database:** PostgreSQL (Supabase)  
 **Last Updated:** 2026-02-12
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-This schema supports Script AI's features:
+This schema supports Creator AI's features:
 - User profiles with referral system
 - AI script generation with style learning
 - Video dubbing with voice cloning

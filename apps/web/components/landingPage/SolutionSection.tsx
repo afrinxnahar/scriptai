@@ -40,7 +40,7 @@ export default function SolutionCard() {
                     Solutions for Your Content Creation Challenges
                 </h2>
                 <p className="max-w-[700px] text-slate-600 dark:text-slate-400 md:text-lg">
-                    Script AI addresses your pain points with powerful, tailored solutions to streamline your workflow.
+                    Creator AI addresses your pain points with powerful, tailored solutions to streamline your workflow.
                 </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-16">

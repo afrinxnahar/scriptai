@@ -71,7 +71,7 @@ export function generateResetPasswordEmail({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Password Reset OTP • Script AI</title>
+  <title>Password Reset OTP • Creator AI</title>
 </head>
 <body style="margin:0;padding:0;background:#f7f7f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
   <table role="presentation" width="100%" style="padding:40px 20px;background:#f7f7f7;">
@@ -91,7 +91,7 @@ export function generateResetPasswordEmail({
             <td style="padding:40px 32px;">
               <p style="margin:0 0 18px;color:#222;font-size:16px;line-height:1.6;">Hello there,</p>
               <p style="margin:0 0 28px;color:#333;font-size:16px;line-height:1.6;">
-                We received a request to reset your password for your <strong>Script AI</strong> account.
+                We received a request to reset your password for your <strong>Creator AI</strong> account.
                 Use the OTP code below to verify your identity:
               </p>
 
@@ -155,7 +155,7 @@ export function generateResetPasswordEmail({
           <!-- Footer -->
           <tr>
             <td style="background:#000;color:#fff;padding:20px;text-align:center;font-size:11px;letter-spacing:1px;">
-              © ${new Date().getFullYear()} Script AI. All rights reserved.
+              © ${new Date().getFullYear()} Creator AI. All rights reserved.
             </td>
           </tr>
         </table>

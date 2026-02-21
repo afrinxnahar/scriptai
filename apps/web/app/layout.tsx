@@ -13,7 +13,7 @@ export async function generateMetadata() {
   const fullUrl = process.env.NEXT_PUBLIC_BASE_URL || "https:///tryscriptai.com"
 
   return {
-    title: "Script AI - Personalized AI Assistant for YouTubers",
+    title: "Creator AI - Personalized AI Assistant for YouTubers",
     description: "Generate personalized scripts, titles, thumbnails for your YouTube videos",
     alternates: {
       canonical: fullUrl,

@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { useStoryBuilder } from "@/hooks/useStoryBuilder"
 import { StoryBuilderForm } from "@/components/dashboard/story-builder/StoryBuilderForm"
 import { StoryBuilderProgress } from "@/components/dashboard/story-builder/StoryBuilderProgress"
@@ -8,40 +10,39 @@ import { StoryBuilderHistory } from "@/components/dashboard/story-builder/StoryB
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function StoryBuilderPage() {
+  const searchParams = useSearchParams()
   const {
-    videoTopic,
-    setVideoTopic,
-    targetAudience,
-    setTargetAudience,
-    videoDuration,
-    setVideoDuration,
-    contentType,
-    setContentType,
-    tone,
-    setTone,
-    additionalContext,
-    setAdditionalContext,
-    personalized,
-    setPersonalized,
-    isGenerating,
-    progress,
-    statusMessage,
+    videoTopic, setVideoTopic,
+    targetAudience, setTargetAudience,
+    audienceLevel, setAudienceLevel,
+    videoDuration, setVideoDuration,
+    contentType, setContentType,
+    storyMode, setStoryMode,
+    tone, setTone,
+    additionalContext, setAdditionalContext,
+    personalized, setPersonalized,
+    selectedIdeationId, selectedIdeaIndex,
+    ideationJobs, isLoadingIdeations,
+    isGenerating, progress, statusMessage,
     generatedResult,
-    pastJobs,
-    isLoadingJobs,
+    pastJobs, isLoadingJobs,
     aiTrained,
-    handleGenerate,
-    handleRegenerate,
-    handleViewJob,
-    handleDeleteJob,
+    handleGenerate, handleRegenerate,
+    handleViewJob, handleDeleteJob,
+    handleSelectIdea,
   } = useStoryBuilder()
+
+  useEffect(() => {
+    const topic = searchParams.get("topic")
+    if (topic && !videoTopic) setVideoTopic(topic)
+  }, [searchParams])
 
   return (
     <div className="container py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Story Builder</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Structure compelling video stories with AI-powered hooks, retention beats, and emotional arcs
+          Build modular story blueprints with structured hooks, escalation segments, tension mapping, and retention scoring
         </p>
       </div>
 
@@ -60,10 +61,14 @@ export default function StoryBuilderPage() {
                 setVideoTopic={setVideoTopic}
                 targetAudience={targetAudience}
                 setTargetAudience={setTargetAudience}
+                audienceLevel={audienceLevel}
+                setAudienceLevel={setAudienceLevel}
                 videoDuration={videoDuration}
                 setVideoDuration={setVideoDuration}
                 contentType={contentType}
                 setContentType={setContentType}
+                storyMode={storyMode}
+                setStoryMode={setStoryMode}
                 tone={tone}
                 setTone={setTone}
                 additionalContext={additionalContext}
@@ -73,6 +78,11 @@ export default function StoryBuilderPage() {
                 aiTrained={aiTrained}
                 isGenerating={isGenerating}
                 onGenerate={handleGenerate}
+                ideationJobs={ideationJobs}
+                isLoadingIdeations={isLoadingIdeations}
+                onSelectIdea={handleSelectIdea}
+                selectedIdeationId={selectedIdeationId}
+                selectedIdeaIndex={selectedIdeaIndex}
               />
             </div>
 
@@ -89,32 +99,32 @@ export default function StoryBuilderPage() {
                 <h3 className="font-semibold text-sm">What you&apos;ll get</h3>
                 <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                   <li className="flex items-start gap-2">
-                    <span className="text-yellow-500 mt-0.5">&#9889;</span>
-                    Hook strategy for the crucial first 10 seconds
+                    <span className="text-green-500 mt-0.5">&#9679;</span>
+                    Structured hook with curiosity, promise &amp; stakes
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">&#127919;</span>
-                    Retention beats to keep viewers engaged
+                    <span className="text-yellow-500 mt-0.5">&#9679;</span>
+                    Context setup with problem &amp; why it matters
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">&#128260;</span>
-                    Open loops that create anticipation
+                    <span className="text-blue-500 mt-0.5">&#9679;</span>
+                    Escalation segments with micro-hooks &amp; transitions
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-orange-500 mt-0.5">&#9889;</span>
-                    Pattern interrupts to recapture attention
+                    <span className="text-red-500 mt-0.5">&#9679;</span>
+                    Climax with insights, twists &amp; value moments
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-0.5">&#9679;</span>
+                    Resolution + callback with soft CTA
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-500 mt-0.5">&#128202;</span>
+                    Tension mapping: retention score, curiosity loops, drop risk
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500 mt-0.5">&#10084;&#65039;</span>
-                    Emotional arc for deeper connection
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 mt-0.5">&#128227;</span>
-                    Strategic CTA placement with scripts
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-teal-500 mt-0.5">&#9201;</span>
-                    Story pacing guide section by section
+                    Emotional arc, retention beats &amp; pattern interrupts
                   </li>
                 </ul>
               </div>
@@ -125,8 +135,8 @@ export default function StoryBuilderPage() {
                     <span>&#10024;</span> Powered by your style
                   </h3>
                   <p className="text-xs text-purple-600 dark:text-purple-400">
-                    Your AI is trained! Story structures will be personalized to match your channel&apos;s tone,
-                    pacing, humor style, and audience engagement patterns.
+                    Your AI is trained! Blueprints adapt to your channel&apos;s pacing, humor frequency,
+                    direct address style, stats usage, and emotional tone patterns.
                   </p>
                 </div>
               )}

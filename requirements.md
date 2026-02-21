@@ -1,6 +1,6 @@
-# Script AI — Requirements
+# Creator AI — Requirements
 
-## What is Script AI?
+## What is Creator AI?
 
 A personalized AI tool for YouTube creators. It learns your unique style from your existing videos and helps you create content faster — scripts, subtitles, research, dubbing, and more.
 
@@ -25,9 +25,9 @@ A personalized AI tool for YouTube creators. It learns your unique style from yo
 - Choose output language
 - Save, edit, and export scripts as PDF
 
-### 3. Idea Research
+### 3. Ideation
 
-- Enter a topic to get AI-generated research
+- Enter an idea to get AI-generated research
 - Returns summary, key points, trends, content angles, and sources
 - Uses live web search for up-to-date information
 - Personalized to your channel's niche when AI is trained
@@ -122,13 +122,16 @@ A personalized AI tool for YouTube creators. It learns your unique style from yo
 
 ## External Services Used
 
-| Service | Purpose |
-|---------|---------|
-| Supabase | User accounts, database, file storage |
+
+| Service          | Purpose                                                 |
+| ---------------- | ------------------------------------------------------- |
+| Supabase         | User accounts, database, file storage                   |
 | Google Gemini AI | Script writing, research, transcription, style analysis |
-| OpenAI GPT-4o | Subtitle generation, thumbnail descriptions |
-| Murf.ai | Audio/video dubbing |
-| YouTube Data API | Channel data, video metadata |
-| Resend | Transactional emails (OTP, welcome, admin) |
-| Redis + BullMQ | Background job queue for AI training |
-| FFmpeg | Video processing and subtitle burning |
+| OpenAI GPT-4o    | Subtitle generation, thumbnail descriptions             |
+| Murf.ai          | Audio/video dubbing                                     |
+| YouTube Data API | Channel data, video metadata                            |
+| Resend           | Transactional emails (OTP, welcome, admin)              |
+| Redis + BullMQ   | Background job queue for AI training                    |
+| FFmpeg           | Video processing and subtitle burning                   |
+
+

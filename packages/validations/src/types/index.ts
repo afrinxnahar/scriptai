@@ -15,6 +15,8 @@ export interface Script {
   content?: string
   tone?: string
   language?: string
+  status?: string
+  credits_consumed?: number
   created_at: string
   updated_at?: string
   user_id?: string
