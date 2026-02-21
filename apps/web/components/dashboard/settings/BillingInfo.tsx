@@ -1,149 +1,270 @@
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useSettings } from "@/hooks/useSettings";
-import { CreditCard, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
-
-// A type for the component's data state
-interface BillingData {
-  currentPlan: string
-  nextBillingDate: string | null
-  paymentMethod: string | null
-}
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useBilling } from "@/hooks/useBilling";
+import {
+  Check,
+  CreditCard,
+  ExternalLink,
+  Loader2,
+  Sparkles,
+  Zap,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function BillingInfo() {
+  const {
+    plans,
+    billingInfo,
+    loading,
+    checkoutLoading,
+    portalLoading,
+    subscribe,
+    openPortal,
+    refresh,
+  } = useBilling();
 
-  const { updateBilling, loadingBilling } = useSettings()
-
-
-  const [isLoadingData, setIsLoadingData] = useState(true)
-  const [billingData, setBillingData] = useState<BillingData | null>(null)
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const fetchBillingData = async () => {
-      setIsLoadingData(true)
-      // Simulate an API call to get the user's billing info
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setBillingData({
-        currentPlan: "Pro",
-        nextBillingDate: "September 16, 2025",
-        paymentMethod: "Visa ending in 4242",
-      })
-      setIsLoadingData(false)
+    const status = searchParams.get("status");
+    if (status === "success") {
+      toast.success("Subscription activated!", {
+        description: "Your plan has been upgraded successfully.",
+      });
+      refresh();
+    } else if (status === "cancelled") {
+      toast.info("Checkout cancelled");
     }
+  }, [searchParams, refresh]);
 
-    fetchBillingData()
-  }, [])
+  const currentPlanName = billingInfo?.currentPlan?.name ?? "Starter";
+  const hasActiveSubscription = !!billingInfo?.subscription;
 
-  const handleSaveBilling = () => {
-    if (!billingData) return
-
-    updateBilling({
-      plan: billingData.currentPlan,
-      paymentMethod: billingData.paymentMethod || "",
-    })
-  }
+  if (loading) return <BillingSkeleton />;
 
   return (
-    <Card className="border border-slate-200 dark:border-slate-800 shadow-sm">
-      <CardHeader>
-        <CardTitle>Billing Information</CardTitle>
-        <CardDescription>Manage your plan and payment method.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Current Plan */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium">Current Plan</h3>
-          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-            <div>
-
-              {isLoadingData ? (
-                <>
-                  <Skeleton className="h-4 w-32 mb-2" />
-                  <Skeleton className="h-3 w-40" />
-                </>
-              ) : (
-                <>
-                  <p className="font-medium">{billingData?.currentPlan} Plan</p>
-                  {billingData?.nextBillingDate && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Next billing date: {billingData.nextBillingDate}
-                    </p>
+    <div className="space-y-6">
+      {/* Current Plan Card */}
+      <Card className="border border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader>
+          <CardTitle>Current Plan</CardTitle>
+          <CardDescription>
+            Your subscription and credit balance
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4 dark:bg-slate-900">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40">
+                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    {currentPlanName} Plan
+                  </p>
+                  {hasActiveSubscription && (
+                    <Badge
+                      variant="outline"
+                      className="border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
+                    >
+                      {billingInfo.subscription!.status}
+                    </Badge>
                   )}
-                </>
-              )}
+                </div>
+                {billingInfo?.subscription?.currentPeriodEnd && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Renews{" "}
+                    {new Date(
+                      billingInfo.subscription.currentPeriodEnd,
+                    ).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                )}
+              </div>
             </div>
-            {isLoadingData ? (
-              <Skeleton className="h-8 w-28 rounded-md" />
-            ) : (
-              <Button variant="outline">Upgrade Plan</Button>
-            )}
+            <div className="text-right">
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {billingInfo?.credits ?? 0}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                credits remaining
+              </p>
+            </div>
           </div>
-        </div>
 
-        <Separator />
-
-        {/* Payment Method */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium">Payment Method</h3>
-          {isLoadingData ? (
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <div className="flex items-center">
-                <Skeleton className="h-5 w-5 rounded-full mr-2" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-              <Skeleton className="h-8 w-20 rounded-md" />
-            </div>
-          ) : billingData?.paymentMethod ? (
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <div className="flex items-center">
-                <CreditCard className="h-5 w-5 mr-2 text-slate-500" />
-                <p>{billingData.paymentMethod}</p>
-              </div>
-              <Button variant="outline" size="sm">
-                Change
-              </Button>
-            </div>
-          ) : (
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <p className="text-slate-500 dark:text-slate-400">No payment method added</p>
-              <Button variant="outline" size="sm" className="mt-2">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Add Payment Method
-              </Button>
-            </div>
+          {hasActiveSubscription && (
+            <Button
+              variant="outline"
+              onClick={openPortal}
+              disabled={portalLoading}
+              className="w-full sm:w-auto"
+            >
+              {portalLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="mr-2 h-4 w-4" />
+              )}
+              Manage Subscription
+            </Button>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        <Separator />
+      {/* Plans Grid */}
+      <Card className="border border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader>
+          <CardTitle>
+            {hasActiveSubscription ? "Change Plan" : "Upgrade Plan"}
+          </CardTitle>
+          <CardDescription>
+            Choose the plan that fits your content creation needs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {plans.map((plan) => {
+              const isCurrent = plan.name === currentPlanName;
+              const isPopular = plan.name === "Pro";
+              const isEnterprise = plan.name === "Enterprise";
+              const isFree = plan.price_monthly === 0;
+              const features: string[] =
+                typeof plan.features === "string"
+                  ? JSON.parse(plan.features)
+                  : plan.features;
 
-        {/* Billing History */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium">Billing History</h3>
-          {isLoadingData ? (
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <Skeleton className="h-4 w-56 mx-auto" />
-            </div>
-          ) : (
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg text-center">
-              <p className="text-slate-500 dark:text-slate-400">No billing history available</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50 rounded-b-lg">
-        <Button onClick={handleSaveBilling} disabled={loadingBilling}>
-          {loadingBilling ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <CreditCard className="mr-2 h-4 w-4" />
-          )}
-          Save Billing Info
-        </Button>
-      </div>
-    </Card>
-  )
+              return (
+                <div
+                  key={plan.id}
+                  className={cn(
+                    "relative flex flex-col rounded-xl border p-5 transition-all",
+                    isCurrent
+                      ? "border-purple-300 bg-purple-50/50 dark:border-purple-700 dark:bg-purple-900/10"
+                      : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600",
+                  )}
+                >
+                  {isPopular && (
+                    <Badge className="absolute -top-2.5 right-3 bg-purple-600 text-white">
+                      Popular
+                    </Badge>
+                  )}
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      {plan.name}
+                    </h3>
+                    <div className="mt-1 flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                        ${plan.price_monthly}
+                      </span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">
+                        /mo
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {plan.credits_monthly.toLocaleString()} credits/month
+                    </p>
+                  </div>
+
+                  <Separator className="mb-4" />
+
+                  <ul className="mb-6 flex-1 space-y-2">
+                    {features.map((feature, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400"
+                      >
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {isCurrent ? (
+                    <Button variant="outline" disabled className="w-full">
+                      Current Plan
+                    </Button>
+                  ) : isEnterprise ? (
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href="mailto:support@tryscriptai.com">
+                        Contact Sales
+                      </a>
+                    </Button>
+                  ) : isFree ? (
+                    <Button variant="outline" disabled className="w-full">
+                      Free
+                    </Button>
+                  ) : (
+                    <Button
+                      className={cn(
+                        "w-full",
+                        isPopular &&
+                          "bg-purple-600 hover:bg-purple-700 text-white",
+                      )}
+                      variant={isPopular ? "default" : "outline"}
+                      onClick={() => subscribe(plan.id)}
+                      disabled={!!checkoutLoading}
+                    >
+                      {checkoutLoading === plan.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Zap className="mr-2 h-4 w-4" />
+                      )}
+                      {hasActiveSubscription ? "Switch Plan" : "Subscribe"}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function BillingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Card className="border border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-56" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </CardContent>
+      </Card>
+      <Card className="border border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-56" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-72 w-full rounded-xl" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
