@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import ResearchDetails from "@/components/dashboard/research/ResearchDetails";
 import { ResearchTopic } from "@repo/validation";
+import { api } from "@/lib/api-client";
 
 // interface ResearchTopic {
 //   id: string;
@@ -33,19 +34,7 @@ export default function TopicDetails() {
       if (!researchId) return;
 
       try {
-        const response = await fetch(`/api/research-topic/${researchId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to fetch research topic");
-        }
-
-        const data = await response.json();
+        const data = await api.get<ResearchTopic>(`/api/v1/research/${researchId}`, { requireAuth: true });
         setResearch(data);
       } catch (error: any) {
         toast.error("Error fetching research topic", {

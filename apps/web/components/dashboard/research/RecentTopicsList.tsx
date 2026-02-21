@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { ResearchTopic } from "@repo/validation/src/types/researchTopicTypes";
+import { api } from "@/lib/api-client";
 
 const RecentTopicsSkeleton: FC = () => (
     <div className="space-y-3">
@@ -31,9 +32,7 @@ export default function RecentTopicsList() {
     const fetchRecentTopics = useCallback(async () => {
         setLoadingTopics(true);
         try {
-            const response = await fetch("/api/research-topic");
-            if (!response.ok) throw new Error("Failed to fetch recent topics");
-            const data = await response.json();
+            const data = await api.get<ResearchTopic[]>("/api/v1/research", { requireAuth: true });
             setRecentTopics(data || []);
         } catch (error: any) {
             toast.error("Error fetching recent topics", { description: error.message });
