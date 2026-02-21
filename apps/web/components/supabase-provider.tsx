@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import { type SupabaseClient, type User, type Session } from "@supabase/supabase-js"
@@ -26,6 +27,7 @@ type SupabaseContext = {
   setProfile: Dispatch<SetStateAction<UserProfile | null>>
   profileLoading: boolean
   fetchUserProfile: (userId: string) => Promise<void>
+  logout: () => Promise<void>
 }
 
 // Suspense boundary helpers
@@ -44,6 +46,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
+  const isLoggingOut = useRef(false)
 
   // Generate referral code
   function generateReferralCode(): string {
@@ -132,6 +135,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (isLoggingOut.current) return
       setSession(newSession)
       setUser(newSession?.user ?? null)
       setProviderToken((newSession as any)?.provider_token ?? null)
@@ -143,6 +147,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe()
     }
   }, [supabase])
+
+  const logout = async () => {
+    isLoggingOut.current = true
+    await supabase.auth.signOut()
+  }
 
   // Fetch profile when user changes
   useEffect(() => {
@@ -166,6 +175,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     setProfile,
     profileLoading,
     fetchUserProfile,
+    logout,
   }
 
   return <Context.Provider value={value}>{children}</Context.Provider>
