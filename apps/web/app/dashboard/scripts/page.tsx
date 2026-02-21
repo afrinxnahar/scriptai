@@ -13,6 +13,8 @@ import ContentCardSkeleton from "@/components/dashboard/common/skeleton/ContentC
 import { EmptySvg } from "@/components/dashboard/common/EmptySvg"
 import { AITrainingRequired } from "@/components/dashboard/common/AITrainingRequired"
 import { getScripts, deleteScript, Script } from "@/lib/api/getScripts"
+import { downloadBlob } from "@/lib/download"
+import { api } from "@/lib/api-client"
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -73,25 +75,11 @@ export default function Scripts() {
         if (!scriptId) return
 
         try {
-            const response = await fetch(`/api/scripts/${scriptId}/export`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/pdf",
-                },
+            const blob = await api.get<Blob>(`/api/v1/script/${scriptId}/export`, {
+                requireAuth: true,
+                responseType: "blob",
             })
-
-            if (!response.ok) throw new Error("Failed to export script")
-
-            const blob = await response.blob()
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement("a")
-
-            a.href = url
-            a.download = `script-${scriptId}.pdf`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url) // Clean up the object URL
+            downloadBlob(blob, `script-${scriptId}.pdf`)
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred"
             toast.error("Error exporting script", {
