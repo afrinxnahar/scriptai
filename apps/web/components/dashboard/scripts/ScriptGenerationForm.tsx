@@ -3,181 +3,138 @@
 import { useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react"
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react"
 
 import ScriptGenerationStepper from "./ScriptGenerationStepper"
 import FormStep1 from "./FormStep1"
 import FormStep2 from "./FormStep2"
 import FormStep3 from "./FormStep3"
 
-// Define a type for the form data to pass to the parent
-export type ScriptFormData = {
-    prompt: string
-    context: string
-    tone: string
-    includeStorytelling: boolean
-    references: string
-    language: string
-    duration: string
-    customDuration?: string
-    includeTimestamps: boolean
-    personalized?: boolean
-    files: File[]
-
-}
-
 interface ScriptGenerationFormProps {
-    loading: boolean
-    onGenerate: (formData: ScriptFormData) => void
+  prompt: string; setPrompt: (v: string) => void
+  context: string; setContext: (v: string) => void
+  tone: string; setTone: (v: string) => void
+  language: string; setLanguage: (v: string) => void
+  duration: string; setDuration: (v: string) => void
+  customDuration: string; setCustomDuration: (v: string) => void
+  includeStorytelling: boolean; setIncludeStorytelling: (v: boolean) => void
+  includeTimestamps: boolean; setIncludeTimestamps: (v: boolean) => void
+  references: string[]; setReferences: (v: string[]) => void
+  files: File[]; setFiles: React.Dispatch<React.SetStateAction<File[]>>
+  isGenerating: boolean
+  onGenerate: () => void
 }
 
-// Animation variants for the steps
 const formStepVariants = {
-    hidden: { opacity: 0, x: -50 },
-    visible: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: 50 },
+  hidden: { opacity: 0, x: -50 },
+  visible: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 50 },
 }
 
-export default function ScriptGenerationForm({
-    loading,
-    onGenerate,
-}: ScriptGenerationFormProps) {
-    const [prompt, setPrompt] = useState("")
-    const [context, setContext] = useState("")
-    const [tone, setTone] = useState("conversational")
-    const [includeStorytelling, setIncludeStorytelling] = useState(false)
-    const [references, setReferences] = useState("")
-    const [language, setLanguage] = useState("english")
-    const [duration, setDuration] = useState("3min");
-    const [customDuration, setCustomDuration] = useState("");
-    const [includeTimestamps, setIncludeTimestamps] = useState(false);
-    const [files, setFiles] = useState<File[]>([]);
+export default function ScriptGenerationForm(props: ScriptGenerationFormProps) {
+  const [step, setStep] = useState(1)
+  const [promptError, setPromptError] = useState<string | null>(null)
 
-    // State for UI flow
-    const [step, setStep] = useState(1)
-    const [promptError, setPromptError] = useState<string | null>(null)
-
-    const handleNext = () => {
-        if (step === 1 && !prompt) {
-            setPromptError("Prompt is required")
-            return
-        }
-        setPromptError(null)
-        setStep(step + 1)
+  const handleNext = () => {
+    if (step === 1 && !props.prompt.trim()) {
+      setPromptError("Prompt is required")
+      return
     }
+    setPromptError(null)
+    setStep(step + 1)
+  }
 
-    const handleGenerate = () => {
-        if (!prompt) {
-            setStep(1) // Go back to step 1 if prompt is missing
-            setPromptError("Prompt is required")
-            return
-        }
-        onGenerate({
-            prompt,
-            context,
-            tone,
-            includeStorytelling,
-            references,
-            language,
-            duration,
-            customDuration,
-            includeTimestamps,
-            files
-        })
+  const handleGenerate = () => {
+    if (!props.prompt.trim()) {
+      setStep(1)
+      setPromptError("Prompt is required")
+      return
     }
+    props.onGenerate()
+  }
 
-    const steps = [
-        { id: 1, name: "Core Idea" },
-        { id: 2, name: "Style & Tone" },
-        { id: 3, name: "Sources & Generate" },
-    ]
+  const steps = [
+    { id: 1, name: "Core Idea" },
+    { id: 2, name: "Style & Tone" },
+    { id: 3, name: "Sources & Generate" },
+  ]
 
-    return (
-        <div className="relative space-y-6">
-            <ScriptGenerationStepper steps={steps} currentStep={step} />
+  return (
+    <div className="relative space-y-6">
+      <ScriptGenerationStepper steps={steps} currentStep={step} />
 
-            <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30 p-3 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                <p className="text-sm text-purple-800 dark:text-purple-200">
-                    Generating a script will cost{" "}
-                    <span className="font-semibold">1 credit</span>.
-                </p>
-            </div>
+      <div className="relative min-h-[450px] overflow-y-auto">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            variants={formStepVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="space-y-6 w-full"
+          >
+            {step === 1 && (
+              <FormStep1
+                prompt={props.prompt}
+                setPrompt={props.setPrompt}
+                context={props.context}
+                setContext={props.setContext}
+                promptError={promptError}
+              />
+            )}
+            {step === 2 && (
+              <FormStep2
+                tone={props.tone} setTone={props.setTone}
+                language={props.language} setLanguage={props.setLanguage}
+                includeStorytelling={props.includeStorytelling} setIncludeStorytelling={props.setIncludeStorytelling}
+                customDuration={props.customDuration} setCustomDuration={props.setCustomDuration}
+                duration={props.duration} setDuration={props.setDuration}
+                includeTimestamps={props.includeTimestamps} setIncludeTimestamps={props.setIncludeTimestamps}
+              />
+            )}
+            {step === 3 && (
+              <FormStep3
+                references={props.references}
+                setReferences={props.setReferences}
+                files={props.files}
+                setFiles={props.setFiles}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-            <div className="relative h-[450px] overflow-y-auto">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={step}
-                        variants={formStepVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="space-y-6 absolute w-full"
-                    >
-                        {step === 1 && (
-                            <FormStep1
-                                prompt={prompt}
-                                setPrompt={setPrompt}
-                                context={context}
-                                setContext={setContext}
-                                promptError={promptError}
-                            />
-                        )}
-                        {step === 2 && (
-                            <FormStep2
-                                tone={tone}
-                                setTone={setTone}
-                                language={language}
-                                setLanguage={setLanguage}
-                                includeStorytelling={includeStorytelling}
-                                setIncludeStorytelling={setIncludeStorytelling} customDuration={customDuration} setCustomDuration={setCustomDuration} duration={duration} setDuration={setDuration} includeTimestamps={includeTimestamps} setIncludeTimestamps={setIncludeTimestamps} />
-                        )}
-                        {step === 3 && (
-                            <FormStep3
-                                references={references}
-                                setReferences={setReferences}
-                                files={files}
-                                setFiles={setFiles}
-                            />
-                        )}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between pt-4">
-                <Button
-                    variant="outline"
-                    onClick={() => setStep(step - 1)}
-                    disabled={step === 1 || loading}
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                </Button>
-                {step < 3 ? (
-                    <Button
-                        onClick={handleNext}
-                        className="bg-slate-900 hover:bg-slate-800 text-white"
-                        disabled={loading}
-                    >
-                        Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={handleGenerate}
-                        className="bg-slate-900 hover:bg-slate-800 text-white min-w-[180px]"
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
-                            </>
-                        ) : (
-                            "✨ Generate Script"
-                        )}
-                    </Button>
-                )}
-            </div>
-        </div>
-    )
+      <div className="flex justify-between pt-4">
+        <Button
+          variant="outline"
+          onClick={() => setStep(step - 1)}
+          disabled={step === 1 || props.isGenerating}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        {step < 3 ? (
+          <Button
+            onClick={handleNext}
+            className="bg-slate-900 hover:bg-slate-800 text-white"
+            disabled={props.isGenerating}
+          >
+            Next <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            onClick={handleGenerate}
+            className="bg-slate-900 hover:bg-slate-800 text-white min-w-[180px]"
+            disabled={props.isGenerating}
+          >
+            {props.isGenerating ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+            ) : (
+              "Generate Script"
+            )}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
 }
