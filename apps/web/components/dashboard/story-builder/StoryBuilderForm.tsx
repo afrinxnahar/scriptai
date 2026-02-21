@@ -14,49 +14,40 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2, Sparkles, BookOpen, Users, Clock, Film, Palette, Wand2, ArrowRight } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  Loader2, Sparkles, BookOpen, Users, Clock, Film, Palette, Wand2,
+  ArrowRight, Lightbulb, Clapperboard, GraduationCap,
+} from "lucide-react"
 import {
   VIDEO_DURATIONS,
   VIDEO_DURATION_LABELS,
   CONTENT_TYPES,
   CONTENT_TYPE_LABELS,
+  STORY_MODES,
+  STORY_MODE_LABELS,
+  AUDIENCE_LEVELS,
+  AUDIENCE_LEVEL_LABELS,
   type VideoDuration,
   type ContentType,
+  type StoryMode,
+  type AudienceLevel,
 } from "@repo/validation"
-
-const PRESET_TOPICS = [
-  {
-    label: "Tech Review",
-    topic: "In-depth review of the latest smartphone with real-world tests and comparisons",
-    audience: "Tech enthusiasts aged 18-35",
-    contentType: "review" as ContentType,
-    duration: "medium" as VideoDuration,
-  },
-  {
-    label: "Tutorial",
-    topic: "Step-by-step guide to building a personal website from scratch",
-    audience: "Beginners learning web development",
-    contentType: "tutorial" as ContentType,
-    duration: "long" as VideoDuration,
-  },
-  {
-    label: "Story Time",
-    topic: "The incredible journey of how I quit my job and built a business from nothing",
-    audience: "Aspiring entrepreneurs and career changers",
-    contentType: "story" as ContentType,
-    duration: "medium" as VideoDuration,
-  },
-]
+import type { IdeationJob } from "@repo/validation"
 
 interface StoryBuilderFormProps {
   videoTopic: string
   setVideoTopic: (v: string) => void
   targetAudience: string
   setTargetAudience: (v: string) => void
+  audienceLevel: AudienceLevel
+  setAudienceLevel: (v: AudienceLevel) => void
   videoDuration: VideoDuration
   setVideoDuration: (v: VideoDuration) => void
   contentType: ContentType
   setContentType: (v: ContentType) => void
+  storyMode: StoryMode
+  setStoryMode: (v: StoryMode) => void
   tone: string
   setTone: (v: string) => void
   additionalContext: string
@@ -66,33 +57,49 @@ interface StoryBuilderFormProps {
   aiTrained: boolean
   isGenerating: boolean
   onGenerate: () => void
+  ideationJobs: IdeationJob[]
+  isLoadingIdeations: boolean
+  onSelectIdea: (ideationId: string, ideaIndex: number, ideaTitle: string) => void
+  selectedIdeationId?: string
+  selectedIdeaIndex?: number
+}
+
+const STORY_MODE_DESCRIPTIONS: Record<StoryMode, string> = {
+  cinematic: "Dramatic visuals, slow reveals, epic tone",
+  high_energy: "Fast cuts, bold statements, rapid pacing",
+  documentary: "Facts-first, measured pacing, authoritative",
+  conversational: "Casual, direct-to-camera, relatable",
+  dramatic: "Tension-heavy, cliffhangers, suspenseful",
+  minimal: "Clean, essential info only, elegant pacing",
 }
 
 export function StoryBuilderForm({
-  videoTopic,
-  setVideoTopic,
-  targetAudience,
-  setTargetAudience,
-  videoDuration,
-  setVideoDuration,
-  contentType,
-  setContentType,
-  tone,
-  setTone,
-  additionalContext,
-  setAdditionalContext,
-  personalized,
-  setPersonalized,
-  aiTrained,
-  isGenerating,
-  onGenerate,
+  videoTopic, setVideoTopic,
+  targetAudience, setTargetAudience,
+  audienceLevel, setAudienceLevel,
+  videoDuration, setVideoDuration,
+  contentType, setContentType,
+  storyMode, setStoryMode,
+  tone, setTone,
+  additionalContext, setAdditionalContext,
+  personalized, setPersonalized,
+  aiTrained, isGenerating, onGenerate,
+  ideationJobs, isLoadingIdeations, onSelectIdea,
+  selectedIdeationId, selectedIdeaIndex,
 }: StoryBuilderFormProps) {
-  const handleUsePreset = (preset: (typeof PRESET_TOPICS)[number]) => {
-    setVideoTopic(preset.topic)
-    setTargetAudience(preset.audience)
-    setContentType(preset.contentType)
-    setVideoDuration(preset.duration)
-  }
+  const allIdeas = ideationJobs.flatMap(job =>
+    (job.result?.ideas || []).map((idea, idx) => ({
+      ideationId: job.id,
+      ideaIndex: idx,
+      title: idea.title,
+      format: idea.suggestedFormat,
+      score: idea.opportunityScore,
+    }))
+  )
+
+  const selectedIdeaKey = selectedIdeationId && selectedIdeaIndex != null
+    ? `${selectedIdeationId}::${selectedIdeaIndex}`
+    : undefined
 
   return (
     <Card>
@@ -102,8 +109,7 @@ export function StoryBuilderForm({
           Story Builder
         </CardTitle>
         <CardDescription>
-          Describe your video and our AI will craft a complete story structure
-          with hooks, retention beats, open loops, and more
+          Build a modular story blueprint with structured hooks, escalation segments, tension mapping, and retention scoring
         </CardDescription>
       </CardHeader>
 
@@ -127,48 +133,67 @@ export function StoryBuilderForm({
           {aiTrained ? (
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {personalized
-                ? "Story structure will be tailored to your channel's tone, pacing, and audience engagement style"
-                : "Toggle on to use your trained AI style profile for personalized results"}
+                ? "Blueprint adapts to your channel's pacing, humor, tone, and storytelling style"
+                : "Toggle on to use your trained AI style profile"}
             </p>
           ) : (
             <div className="flex items-center justify-between gap-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5">
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                Train your AI in the AI Studio to unlock personalized story structures based on your content style
+                Train your AI in the AI Studio to unlock personalized blueprints
               </p>
               <Link href="/dashboard/train">
                 <Button variant="outline" size="sm" className="shrink-0 text-xs gap-1 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40">
-                  AI Studio
-                  <ArrowRight className="h-3 w-3" />
+                  AI Studio <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
             </div>
           )}
         </div>
 
-        {/* Preset Suggestions */}
-        <div className="space-y-2">
-          <Label className="text-sm text-slate-500 dark:text-slate-400">
-            Quick start with a preset
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {PRESET_TOPICS.map((preset) => (
-              <Button
-                key={preset.label}
-                variant="outline"
-                size="sm"
-                onClick={() => handleUsePreset(preset)}
-                disabled={isGenerating}
-                className="text-xs"
-              >
-                {preset.label}
-              </Button>
-            ))}
+        {/* Idea Selector from Ideation */}
+        {allIdeas.length > 0 && (
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Lightbulb className="h-4 w-4" />
+              Select from Generated Ideas
+              <span className="text-slate-400 font-normal">(optional)</span>
+            </Label>
+            <Select
+              value={selectedIdeaKey || "custom"}
+              onValueChange={(v) => {
+                if (v === "custom") {
+                  setVideoTopic("")
+                  return
+                }
+                const [ideationId, indexStr] = v.split("::")
+                const idea = allIdeas.find(i => i.ideationId === ideationId && i.ideaIndex === Number(indexStr))
+                if (idea) onSelectIdea(idea.ideationId, idea.ideaIndex, idea.title)
+              }}
+              disabled={isGenerating}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Type your own idea or select one..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="custom">
+                  <span className="text-slate-500">Type your own idea...</span>
+                </SelectItem>
+                {allIdeas.map((idea) => (
+                  <SelectItem key={`${idea.ideationId}::${idea.ideaIndex}`} value={`${idea.ideationId}::${idea.ideaIndex}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate max-w-[280px]">{idea.title}</span>
+                      <Badge variant="outline" className="text-[10px] shrink-0">{idea.score}</Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
+        )}
 
         {/* Video Topic */}
         <div className="space-y-2">
-          <Label htmlFor="videoTopic">Video Topic *</Label>
+          <Label htmlFor="videoTopic">Video Topic / Idea *</Label>
           <Textarea
             id="videoTopic"
             placeholder="e.g., How I grew from 0 to 100K subscribers in 6 months using only Shorts"
@@ -178,17 +203,14 @@ export function StoryBuilderForm({
             rows={3}
             className="resize-none"
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Be specific about your video&apos;s topic, angle, and key message
-          </p>
         </div>
 
+        {/* Structure Template + Story Mode */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Content Type */}
           <div className="space-y-2">
             <Label htmlFor="contentType" className="flex items-center gap-1.5">
               <Film className="h-4 w-4" />
-              Content Type
+              Structure Template
             </Label>
             <Select
               value={contentType}
@@ -208,11 +230,41 @@ export function StoryBuilderForm({
             </Select>
           </div>
 
-          {/* Video Duration */}
+          <div className="space-y-2">
+            <Label htmlFor="storyMode" className="flex items-center gap-1.5">
+              <Clapperboard className="h-4 w-4" />
+              Story Mode
+            </Label>
+            <Select
+              value={storyMode}
+              onValueChange={(v) => setStoryMode(v as StoryMode)}
+              disabled={isGenerating}
+            >
+              <SelectTrigger id="storyMode">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STORY_MODES.map((sm) => (
+                  <SelectItem key={sm} value={sm}>
+                    <div className="flex flex-col">
+                      <span>{STORY_MODE_LABELS[sm]}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {STORY_MODE_DESCRIPTIONS[storyMode]}
+            </p>
+          </div>
+        </div>
+
+        {/* Duration + Audience Level */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="videoDuration" className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              Video Duration
+              Target Duration
             </Label>
             <Select
               value={videoDuration}
@@ -226,6 +278,29 @@ export function StoryBuilderForm({
                 {VIDEO_DURATIONS.map((vd) => (
                   <SelectItem key={vd} value={vd}>
                     {VIDEO_DURATION_LABELS[vd]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="audienceLevel" className="flex items-center gap-1.5">
+              <GraduationCap className="h-4 w-4" />
+              Audience Level
+            </Label>
+            <Select
+              value={audienceLevel}
+              onValueChange={(v) => setAudienceLevel(v as AudienceLevel)}
+              disabled={isGenerating}
+            >
+              <SelectTrigger id="audienceLevel">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AUDIENCE_LEVELS.map((al) => (
+                  <SelectItem key={al} value={al}>
+                    {AUDIENCE_LEVEL_LABELS[al]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -249,19 +324,19 @@ export function StoryBuilderForm({
           />
         </div>
 
-        {/* Tone — hint from profile if trained */}
+        {/* Tone */}
         <div className="space-y-2">
           <Label htmlFor="tone" className="flex items-center gap-1.5">
             <Palette className="h-4 w-4" />
-            Tone / Mood
+            Tone Preference
             <span className="text-slate-400 font-normal">
-              {personalized && aiTrained ? "(auto-filled from your style if left empty)" : "(optional)"}
+              {personalized && aiTrained ? "(auto from your style if empty)" : "(optional)"}
             </span>
           </Label>
           <Input
             id="tone"
             placeholder={personalized && aiTrained
-              ? "Leave empty to use your trained tone, or override here"
+              ? "Leave empty for your trained tone, or override"
               : "e.g., Energetic and motivational, casual and conversational"}
             value={tone}
             onChange={(e) => setTone(e.target.value)}
@@ -277,7 +352,7 @@ export function StoryBuilderForm({
           </Label>
           <Textarea
             id="additionalContext"
-            placeholder="Any specific points you want to cover, your filming style, brand guidelines, etc."
+            placeholder="Any specific points, filming style, brand guidelines, etc."
             value={additionalContext}
             onChange={(e) => setAdditionalContext(e.target.value)}
             disabled={isGenerating}
@@ -297,7 +372,7 @@ export function StoryBuilderForm({
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating Story Structure...
+              Generating Story Blueprint...
             </>
           ) : (
             <>

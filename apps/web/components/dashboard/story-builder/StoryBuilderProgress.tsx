@@ -3,7 +3,7 @@
 import { motion } from "motion/react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, Sparkles, BookOpen, PenTool, CheckCircle2 } from "lucide-react"
+import { Loader2, Sparkles, BookOpen, PenTool, CheckCircle2, BarChart3 } from "lucide-react"
 
 interface StoryBuilderProgressProps {
   progress: number
@@ -12,9 +12,10 @@ interface StoryBuilderProgressProps {
 
 const steps = [
   { label: "Queued", icon: Loader2, threshold: 0 },
-  { label: "Analyzing", icon: Sparkles, threshold: 10 },
-  { label: "Structuring", icon: BookOpen, threshold: 20 },
-  { label: "Writing", icon: PenTool, threshold: 70 },
+  { label: "Profile", icon: Sparkles, threshold: 10 },
+  { label: "Blueprint", icon: BookOpen, threshold: 20 },
+  { label: "Scoring", icon: BarChart3, threshold: 75 },
+  { label: "Saving", icon: PenTool, threshold: 85 },
   { label: "Done", icon: CheckCircle2, threshold: 100 },
 ]
 
