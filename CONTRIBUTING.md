@@ -1,6 +1,6 @@
-# 🤝 Contributing to Script AI
+# 🤝 Contributing to Creator AI
 
-Thank you for your interest in contributing to Script AI! This guide will help you get started and understand our development process.
+Thank you for your interest in contributing to Creator AI! This guide will help you get started and understand our development process.
 
 ## 📋 Table of Contents
 
@@ -367,4 +367,4 @@ Contributors are recognized in several ways:
 
 ---
 
-Thank you for contributing to Script AI! Your contributions help make this project better for everyone. 🚀
+Thank you for contributing to Creator AI! Your contributions help make this project better for everyone. 🚀
