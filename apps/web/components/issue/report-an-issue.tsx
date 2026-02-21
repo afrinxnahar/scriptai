@@ -8,6 +8,7 @@ import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import { Input } from "../ui/input";
 import { IconBugFilled } from "@tabler/icons-react";
+import { api } from "@/lib/api-client";
 
 const ReportIssue = ({ useIcon }: { useIcon: boolean }) => {
   const [subject, setSubject] = React.useState("");
@@ -20,15 +21,12 @@ const ReportIssue = ({ useIcon }: { useIcon: boolean }) => {
     setSendingMail(true);
 
     try {
-      const response = await fetch("/api/report-issue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, email: email || "", body }),
-      });
+      await api.post("/api/v1/support/report-issue", {
+        subject,
+        email: email || "",
+        body,
+      }, { requireAuth: true });
 
-      if (!response.ok) throw new Error("Failed to send issue report");
-
-      await response.json();
       toast.success("Issue reported successfully!", {
         description: "Thank you for letting us know. We'll look into it soon.",
       });
