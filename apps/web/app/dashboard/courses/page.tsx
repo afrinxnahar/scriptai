@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Download, BookOpen, Clock } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { toast } from "sonner"
+import { downloadBlob } from "@/lib/download"
 
 interface CourseVideo {
   id: number
@@ -104,14 +105,7 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
 
     const moduleText = JSON.stringify(courseModule, null, 2)
     const blob = new Blob([moduleText], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${courseModule.title.replace(/\s+/g, "-").toLowerCase()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadBlob(blob, `${courseModule.title.replace(/\s+/g, "-").toLowerCase()}.json`)
   }
 
   return (

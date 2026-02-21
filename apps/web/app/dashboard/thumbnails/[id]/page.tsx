@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { downloadFile } from "@/lib/download"
 import { ArrowLeft, Download, Loader2, ImageIcon, Clock, Ratio, Sparkles, AlertCircle, ExternalLink, Trash2, Coins, Link as LinkIcon } from "lucide-react"
 import {
     AlertDialog,
@@ -66,22 +67,10 @@ export default function ThumbnailPage() {
         setLoading(false)
     }
 
-    const handleDownload = useCallback(async (imageUrl: string, index: number) => {
-        try {
-            const response = await fetch(imageUrl)
-            const blob = await response.blob()
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement("a")
-            a.href = url
-            a.download = `thumbnail_${index + 1}.png`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-        } catch {
-            toast.error("Failed to download thumbnail")
-        }
-    }, [])
+    const handleDownload = useCallback(
+        (imageUrl: string, index: number) => downloadFile(imageUrl, `thumbnail_${index + 1}.png`),
+        [],
+    )
 
     const handleDeleteImage = (index: number) => {
         if (!job) return
