@@ -49,7 +49,7 @@ export default function FeatureSection() {
             title: "Referral Program",
             icon: Gift,
             description:
-                "Earn free credits for premium features by referring other creators to Script AI.",
+                "Earn free credits for premium features by referring other creators to Creator AI.",
         },
         {
             title: "AI Thumbnail Generator",

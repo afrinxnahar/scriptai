@@ -111,7 +111,7 @@ const PrivacyAndTerms = () => {
           <main className="lg:col-span-3 space-y-12">
             <PolicySection id="overview" title="1. Overview">
               <p>
-                Script AI is an AI-powered assistant that helps content creators generate high-quality
+                Creator AI is an AI-powered assistant that helps content creators generate high-quality
                 YouTube scripts, titles, thumbnails, and courses. By using our service, you agree
                 to the following privacy and usage terms.
               </p>
@@ -123,7 +123,7 @@ const PrivacyAndTerms = () => {
                 <li>Your email and basic YouTube profile information.</li>
                 <li>Channel and video metadata (titles, descriptions, tags).</li>
                 <li>Videos or links you provide for training.</li>
-                <li>Content you generate with Script AI.</li>
+                <li>Content you generate with Creator AI.</li>
                 <li>Basic usage metrics to improve our service.</li>
               </ul>
             </PolicySection>
@@ -190,7 +190,7 @@ const PrivacyAndTerms = () => {
 
             <PolicySection id="google-api-disclosure" title="10. Google API Disclosure">
               <p>
-                Script AI’s use and transfer of information received from Google APIs will adhere to the{" "}
+                Creator AI’s use and transfer of information received from Google APIs will adhere to the{" "}
                 <PolicyLink href="https://developers.google.com/terms/api-services-user-data-policy">
                   Google API Services User Data Policy
                 </PolicyLink>, including the Limited Use requirements.

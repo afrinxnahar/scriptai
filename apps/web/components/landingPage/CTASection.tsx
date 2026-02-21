@@ -14,7 +14,7 @@ export default function CTASection() {
                         Ready to Transform Your Content Creation?
                     </h2>
                     <p className="max-w-[700px] text-slate-300 md:text-lg">
-                        Join thousands of YouTubers who are saving time and creating better content with Script AI.
+                        Join thousands of YouTubers who are saving time and creating better content with Creator AI.
                     </p>
                     <Link href="/signup">
                         <MButton

@@ -2,12 +2,14 @@
 import { cn } from "@/lib/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { IconMenu2, IconX, IconLock } from "@tabler/icons-react";
 
 interface Links {
     label: string;
     href: string;
     icon: React.JSX.Element | React.ReactNode;
+    badge?: string;
+    locked?: boolean;
 }
 
 interface SidebarContextProps {
@@ -166,11 +168,14 @@ export const SidebarLink = ({
     className?: string;
 }) => {
     const { open, animate } = useSidebar();
+    const Comp = link.locked ? "div" : "a";
+
     return (
-        <a
-            href={link.href}
+        <Comp
+            {...(!link.locked && { href: link.href })}
             className={cn(
                 "flex items-center gap-2 group/sidebar relative",
+                link.locked && "opacity-50 cursor-not-allowed pointer-events-none",
                 className
             )}
             {...props}
@@ -188,10 +193,18 @@ export const SidebarLink = ({
                     ease: [0.4, 0, 0.2, 1],
                     opacity: { duration: open ? 0.3 : 0.15 }
                 }}
-                className="text-sm whitespace-nowrap overflow-hidden"
+                className="text-sm whitespace-nowrap overflow-hidden flex items-center gap-2"
             >
                 {link.label}
+                {link.badge && open && (
+                    <span className="text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-1.5 py-0.5 rounded-full leading-none">
+                        {link.badge}
+                    </span>
+                )}
+                {link.locked && open && (
+                    <IconLock className="h-3 w-3 text-gray-400" />
+                )}
             </motion.span>
-        </a>
+        </Comp>
     );
 };
