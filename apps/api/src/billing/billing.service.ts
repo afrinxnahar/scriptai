@@ -32,18 +32,25 @@ interface SubscriptionRecord {
 
 @Injectable()
 export class BillingService {
-  private readonly stripe: Stripe;
+  private stripeInstance: Stripe | null = null;
   private readonly logger = new Logger(BillingService.name);
 
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly configService: ConfigService,
-  ) {
-    const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!secretKey) {
-      throw new Error('STRIPE_SECRET_KEY is not configured');
+  ) {}
+
+  private getStripe(): Stripe {
+    if (!this.stripeInstance) {
+      const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+      if (!secretKey) {
+        throw new BadRequestException('Stripe is not configured');
+      }
+      this.stripeInstance = new Stripe(secretKey, {
+        apiVersion: '2026-01-28.clover',
+      });
     }
-    this.stripe = new Stripe(secretKey, { apiVersion: '2026-01-28.clover' });
+    return this.stripeInstance;
   }
 
   async getPlans(): Promise<PlanRecord[]> {
@@ -125,7 +132,7 @@ export class BillingService {
       this.configService.get<string>('FRONTEND_DEV_URL') ||
       'http://localhost:3000';
 
-    const session = await this.stripe.checkout.sessions.create({
+    const session = await this.getStripe().checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
@@ -149,7 +156,7 @@ export class BillingService {
       this.configService.get<string>('FRONTEND_DEV_URL') ||
       'http://localhost:3000';
 
-    const session = await this.stripe.billingPortal.sessions.create({
+    const session = await this.getStripe().billingPortal.sessions.create({
       customer: customerId,
       return_url: `${frontendUrl}/dashboard/settings?tab=billing`,
     });
@@ -180,7 +187,7 @@ export class BillingService {
 
     const supabase = this.supabaseService.getClient();
     const stripeSubscription =
-      await this.stripe.subscriptions.retrieve(subscriptionId);
+      await this.getStripe().subscriptions.retrieve(subscriptionId);
     const item = stripeSubscription.items.data[0];
 
     await supabase
@@ -315,7 +322,7 @@ export class BillingService {
       return existingSub.stripe_customer_id;
     }
 
-    const customer = await this.stripe.customers.create({
+    const customer = await this.getStripe().customers.create({
       email,
       metadata: { supabase_user_id: userId },
     });
@@ -368,7 +375,7 @@ export class BillingService {
       'STRIPE_WEBHOOK_SECRET',
     );
     if (!webhookSecret) throw new Error('STRIPE_WEBHOOK_SECRET not configured');
-    return this.stripe.webhooks.constructEvent(
+    return this.getStripe().webhooks.constructEvent(
       payload,
       signature,
       webhookSecret,
