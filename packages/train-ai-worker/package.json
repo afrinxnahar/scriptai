@@ -30,6 +30,7 @@
     "@repo/validation": "workspace:*",
     "axios": "catalog:",
     "bullmq": "catalog:",
+    "ioredis": "^5.8.2",
     "jsonrepair": "^3.13.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"

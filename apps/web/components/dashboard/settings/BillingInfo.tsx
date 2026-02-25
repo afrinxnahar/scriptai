@@ -142,7 +142,7 @@ export function BillingInfo() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = plan.name === currentPlanName;
-              const isPopular = plan.name === "Pro";
+              const isPopular = plan.name === "Creator+";
               const isEnterprise = plan.name === "Enterprise";
               const isFree = plan.price_monthly === 0;
               const features: string[] =
@@ -203,9 +203,7 @@ export function BillingInfo() {
                     </Button>
                   ) : isEnterprise ? (
                     <Button variant="outline" className="w-full" asChild>
-                      <a href="mailto:support@tryscriptai.com">
-                        Contact Sales
-                      </a>
+                      <a href="/signup">Get Started</a>
                     </Button>
                   ) : isFree ? (
                     <Button variant="outline" disabled className="w-full">

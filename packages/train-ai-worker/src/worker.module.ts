@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import * as path from 'path';
+import { getRedisConnection } from './redis.connection';
 import { TrainAiProcessor } from './processor/train-ai.processor';
 import { ThumbnailProcessor } from './processor/thumbnail.processor';
 import { StoryBuilderProcessor } from './processor/story-builder.processor';
@@ -20,10 +21,12 @@ import { ScriptProcessor } from './processor/script.processor';
       ],
     }),
     BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-        password: process.env.REDIS_PASSWORD || undefined,
+      connection: getRedisConnection(),
+      defaultJobOptions: {
+        attempts: 1,
+        backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 5000 },
       },
     }),
     BullModule.registerQueue(

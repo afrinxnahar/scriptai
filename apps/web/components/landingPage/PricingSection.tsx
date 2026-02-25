@@ -4,30 +4,32 @@ import { Button } from "../ui/button"
 import { WobbleCard } from "../ui/wobble-card"
 
 export default function PricingSection() {
+    const comingSoon = new Set(["Course Builder", "Audio dubbing", "Video Generation"])
     const baseFeatures = {
         starter: [
-            "500 free credits/month",
-            "Connect YouTube channel",
+            "No credit card required",
+            "Monthly 500 free credits",
             "AI model training",
             "Ideation",
             "Script generation",
-            "Thumbnail generation",
             "Subtitle generation",
+            "Story Builder",
+            "Thumbnail generation",
             "Course Builder",
         ],
-        proExtras: [
+        creatorPlusExtras: [
             "Everything in Starter",
             "5k credits/month",
-            "Unlimited feature usage",
             "Audio dubbing",
+            "Video Generation",
+            "Community Access",
         ],
         enterpriseExtras: [
-            "Everything in Pro",
+            "Everything in Creator+",
             "100k credits/month",
-            "Advanced analytics",
+            "Advance analytics",
             "Team collaboration",
-            "Custom fine-tuned model",
-            "Priority support",
+            "Priority access to new features",
         ],
     }
 
@@ -37,25 +39,21 @@ export default function PricingSection() {
             name: "Starter",
             price_monthly: 0,
             credits_monthly: 500,
-            features: baseFeatures.starter.map((f) => ({ feature: f, limit: "limited" })),
+            features: baseFeatures.starter.map((f) => ({ feature: f })),
         },
         {
             id: "pro",
-            name: "Pro",
+            name: "Creator+",
             price_monthly: 20,
             credits_monthly: 5000,
-            features: [
-                ...baseFeatures.proExtras,
-            ].map((f) => ({ feature: f, limit: "unlimited" })),
+            features: baseFeatures.creatorPlusExtras.map((f) => ({ feature: f })),
         },
         {
             id: "enterprise",
             name: "Enterprise",
             price_monthly: 499,
             credits_monthly: 100000,
-            features: [
-                ...baseFeatures.enterpriseExtras,
-            ].map((f) => ({ feature: f, limit: "unlimited" })),
+            features: baseFeatures.enterpriseExtras.map((f) => ({ feature: f })),
         },
     ]
 
@@ -73,9 +71,8 @@ export default function PricingSection() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-8 sm:mt-12">
                 {newPlans.map((plan) => {
-                    const isPopular = plan.name === "Pro"
-                    const buttonLabel =
-                        plan.name === "Enterprise" ? "Contact Sales" : "Get Started"
+                    const isPopular = plan.name === "Creator+"
+                    const buttonLabel = "Get Started"
 
                     return (
                         <WobbleCard
@@ -108,7 +105,7 @@ export default function PricingSection() {
                             <p className="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">
                                 {plan.name === "Enterprise"
                                     ? "For professional YouTubers and teams."
-                                    : plan.name === "Pro"
+                                    : plan.name === "Creator+"
                                         ? "For serious content creators."
                                         : "Perfect for trying out Creator AI."}
                             </p>
@@ -134,9 +131,9 @@ export default function PricingSection() {
                                             />
                                         </svg>
                                         {f.feature}
-                                        {f.limit !== "unlimited" && (
-                                            <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">
-                                                ({f.limit})
+                                        {comingSoon.has(f.feature) && (
+                                            <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">
+                                                Coming soon
                                             </span>
                                         )}
                                     </li>
@@ -153,7 +150,7 @@ export default function PricingSection() {
                                 )}
                                 variant={isPopular ? "default" : "outline"}
                             >
-                                <Link href={plan.name === "Enterprise" ? "/contact" : "/signup"}>
+                                <Link href="/signup">
                                     {buttonLabel}
                                 </Link>
                             </Button>
