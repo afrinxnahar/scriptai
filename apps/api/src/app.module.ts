@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import * as path from 'path';
 import redisConfig from './config/redis.config';
+import { getRedisConnection } from './redis.connection';
 import { SupabaseModule } from './supabase/supabase.module';
 
 import { AppController } from './app.controller';
@@ -36,9 +37,8 @@ import { BillingModule } from './billing/billing.module';
       ],
     }),
     BullModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        connection: configService.get('redis'),
+      useFactory: () => ({
+        connection: getRedisConnection(),
         defaultJobOptions: {
           attempts: 1,
           backoff: { type: 'exponential', delay: 1000 },
@@ -47,7 +47,6 @@ import { BillingModule } from './billing/billing.module';
           limiter: { max: 100, duration: 60000 }
         },
       }),
-      inject: [ConfigService],
     }),
     BullModule.registerQueue(
       { name: 'train-ai' },
