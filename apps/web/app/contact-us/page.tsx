@@ -20,7 +20,6 @@ import logo from "@/public/dark-logo.png"
 const formFields = [
   { name: "name", label: "Name", type: "text", placeholder: "Your name" },
   { name: "email", label: "Email", type: "email", placeholder: "you@example.com" },
-  { name: "phone", label: "Phone", type: "tel", placeholder: "Your phone number" },
 ] as const
 
 export default function ContactPage() {

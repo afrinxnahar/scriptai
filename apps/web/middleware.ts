@@ -9,8 +9,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === "/api/track-referral" ||
     request.nextUrl.pathname === "/api/contact-us" ||
     request.nextUrl.pathname === "/api/report-issue" || 
-    request.nextUrl.pathname.startsWith("/api/auth/callback") ||
-    request.nextUrl.pathname.startsWith("/api/youtube/callback")
+    request.nextUrl.pathname === "/api/youtube/callback"
   ) {
     return response
   }
