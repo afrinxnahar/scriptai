@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { SubtitleLine } from "@repo/validation";
 import { parseSRT } from '@/utils/srtUtils';
+import { convertJsonToSrt } from '@/utils/convertJsonToSrt';
 import { api } from '@/lib/api-client';
-import { createClient } from '@/lib/supabase/client';
+import { downloadFile, downloadBlob } from '@/lib/download';
 
 export function useSubtitleFileOperations(
     id: string,
@@ -17,7 +18,6 @@ export function useSubtitleFileOperations(
     const handleSave = async () => {
         if (!id) return;
         setIsSaving(true);
-        console.log(subtitles);
         try {
             const res = await api.patch<{ success: boolean, message: string, subtitles: SubtitleLine[] }>(`/api/v1/subtitle/${id}`, {
                 subtitle_json: subtitles,
@@ -35,20 +35,10 @@ export function useSubtitleFileOperations(
     };
 
     const handleDownload = () => {
-        const srt = subtitles.map((s, i) =>
-            `${i + 1}\n${s.start.replace('.', ',')} --> ${s.end.replace('.', ',')}\n${s.text}\n`
-        ).join('\n');
-
-        const blob = new Blob([srt], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const filename = (videoPath || 'subtitles.srt').split('/').pop()?.split('.').shift();
-        a.href = url;
-        a.download = `${filename}.srt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const srt = convertJsonToSrt(subtitles);
+        if (!srt) return;
+        const baseName = (videoPath || 'subtitles').split('/').pop()?.replace(/\.[^/.]+$/, '') ?? 'subtitles';
+        downloadBlob(new Blob([srt], { type: 'text/plain' }), `${baseName}.srt`);
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,36 +79,13 @@ export function useSubtitleFileOperations(
 
         setDownloadVideoLoading(true);
         try {
-            // Get auth token
-            const supabase = createClient();
-            const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.access_token;
-
-            if (!token) {
-                throw new Error('Authentication required');
-            }
-
             const blob = await api.post<Blob>(
                 '/api/v1/subtitle/burn',
-                {
-                    videoUrl,
-                    subtitles
-                },
-                {
-                    requireAuth: true,
-                    responseType: 'blob'
-                }
+                { videoUrl, subtitles },
+                { requireAuth: true, responseType: 'blob' },
             );
 
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "video_with_subs.mp4";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
+            downloadBlob(blob, "video_with_subs.mp4");
             toast.success('Video downloaded successfully!');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unknown error');

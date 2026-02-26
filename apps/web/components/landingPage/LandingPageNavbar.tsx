@@ -41,7 +41,7 @@ const LandingPageNavbar = () => {
             className="relative z-20 flex items-center px-2 py-1 text-sm font-normal text-black"
           >
             <Image src={logo} alt="Logo" width={30} height={30} />
-            <span className="font-bold text-xl text-black dark:text-white">Script AI</span>
+            <span className="font-bold text-xl text-black dark:text-white">Creator AI</span>
           </Link>
           <NavItems items={navItem} />
           <div className="flex items-center gap-4">

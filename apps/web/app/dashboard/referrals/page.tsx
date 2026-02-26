@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSupabase } from "@/components/supabase-provider"
-import { Copy, Gift, Share2, Users, Clock, CheckCircle } from "lucide-react"
+import { Copy, Gift, Users, Clock, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import { ReferralPageSkeleton } from "@/components/dashboard/referrals/ReferralSkeleton"
+import { api } from "@/lib/api-client"
 
 // Helper function for better time formatting
 const formatTime = (dateString: string) => {
@@ -86,9 +86,7 @@ export default function Referrals() {
 
   const fetchReferralData = async () => {
     try {
-      const response = await fetch("/api/referrals")
-      if (!response.ok) throw new Error("Failed to fetch referral data")
-      const data = await response.json()
+      const data = await api.get<ReferralData>("/api/v1/referral", { requireAuth: true })
       setReferralData(data)
     } catch (error: any) {
       toast.error("Error fetching referral data", { description: error.message })
@@ -100,11 +98,9 @@ export default function Referrals() {
   const generateReferralCode = async () => {
     setGeneratingCode(true)
     try {
-      const response = await fetch("/api/referrals", { method: "POST" })
-      if (!response.ok) throw new Error("Failed to generate referral code")
-      const data = await response.json()
+      const data = await api.post<{ referralCode: string }>("/api/v1/referral/generate", undefined, { requireAuth: true })
       toast.success("Referral code generated!", { description: `Your code: ${data.referralCode}` })
-      await fetchReferralData() // Refresh data
+      await fetchReferralData()
     } catch (error: any) {
       toast.error("Error generating referral code", { description: error.message })
     } finally {
@@ -140,8 +136,8 @@ export default function Referrals() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join Script AI",
-          text: "Check out Script AI - an AI assistant for YouTubers. Use my referral link to get started:",
+          title: "Join Creator AI",
+          text: "Check out Creator AI - an AI assistant for YouTubers. Use my referral link to get started:",
           url: referralLink,
         });
       } catch (error) {

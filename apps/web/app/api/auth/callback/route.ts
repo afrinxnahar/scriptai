@@ -3,6 +3,7 @@ import { type NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { Resend } from 'resend';
+import { BACKEND_URL } from '@/lib/constants';
 
 const CREDITS_PER_REFERRAL = 10;
 
@@ -15,15 +16,15 @@ async function sendWelcomeEmail(
   if (!resend) return;
   try {
     await resend.emails.send({
-      from: 'Script AI <onboarding@tryscriptai.com>',
+      from: 'Creator AI <onboarding@tryscriptai.com>',
       to: email,
-      subject: 'Welcome to Script AI!',
+      subject: 'Welcome to Creator AI!',
       replyTo: 'no-reply@tryscriptai.com', // support@tryscriptai.com
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px;">
           <h1 style="color: #4F46E5; margin-bottom: 10px;">Welcome aboard, ${full_name}! 🎉</h1>
           
-          <p>We're excited to have you join <strong>Script AI</strong>. 🚀</p>
+          <p>We're excited to have you join <strong>Creator AI</strong>. 🚀</p>
           <p>
             Start exploring your dashboard here 👉 
             <a href="https://tryscriptai.com/dashboard" style="color: #4F46E5; text-decoration: none; font-weight: bold;">
@@ -51,7 +52,7 @@ async function sendWelcomeEmail(
 
           <h2 style="margin-top: 30px; color: #111;">🤝 Referral Program</h2>
           <p>
-            Invite friends to join Script AI and earn <strong>${CREDITS_PER_REFERRAL} free credits</strong>!  
+            Invite friends to join Creator AI and earn <strong>${CREDITS_PER_REFERRAL} free credits</strong>!  
             Simply share your referral link from the dashboard — when they sign up, you'll both get ${CREDITS_PER_REFERRAL} credits.
           </p>
 
@@ -59,7 +60,7 @@ async function sendWelcomeEmail(
             <a href="mailto:no-reply@tryscriptai.com" style="color: #4F46E5; text-decoration: none;">no-reply@tryscriptai.com</a>. <!-- support@tryscriptai.com -->
           </p>
 
-          <p style="margin-top: 20px;">Cheers,<br/>The Script AI Team</p>
+          <p style="margin-top: 20px;">Cheers,<br/>The Creator AI Team</p>
         </div>`,
     });
   } catch (error) {
@@ -71,7 +72,7 @@ async function sendAdminNotification(full_name: string, email: string, resend: R
   if (!resend) return;
   try {
     await resend.emails.send({
-      from: 'Script AI <notifications@tryscriptai.com>',
+      from: 'Creator AI <notifications@tryscriptai.com>',
       to: 'afrin@tryscriptai.com',
       subject: 'New User Sign Up Notification',
       html: `
@@ -116,28 +117,24 @@ async function updateUserProfile(
 async function processReferral(
   referralCode: string,
   userEmail: string,
-  origin: string
 ) {
   try {
-    const response = await fetch(`${origin}/api/track-referral`, {
+    const response = await fetch(`${BACKEND_URL}/api/v1/referral/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        referralCode,
-        userEmail,
-      }),
+      body: JSON.stringify({ referralCode, userEmail }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(` Referral API returned ${response.status}:`, errorData);
+      console.error(`Referral API returned ${response.status}:`, errorData);
       return;
     }
 
     const result = await response.json();
     console.log(`Referral tracked for ${userEmail} with code: ${referralCode}`, result);
   } catch (error) {
-    console.error(' Error tracking referral:', error);
+    console.error('Error tracking referral:', error);
   }
 }
 
@@ -281,7 +278,7 @@ export async function GET(request: NextRequest) {
 
       // Track referral if code exists (for new signups via OAuth with ref parameter)
       if (referralCode) {
-        await processReferral(referralCode, user.email!, request.nextUrl.origin);
+        await processReferral(referralCode, user.email!);
       }
 
       // Complete any pending referral for this email

@@ -1,19 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { ArrowLeft, BookText, CheckCircle, Clock, Hash, Languages, LinkIcon, Loader2, Smile, Sparkles, XCircle } from "lucide-react"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog"
-import ScriptEditor from "@/components/dashboard/scripts/ScriptEditor"
+import {
+  ArrowLeft, Loader2, CreditCard, Trash2, Save, Download, RefreshCw, Plus,
+} from "lucide-react"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter,
+} from "@/components/ui/alert-dialog"
+import { ScriptContentEditor } from "@/components/dashboard/scripts/ScriptContentEditor"
 import { ScriptLoaderSkeleton } from "@/components/dashboard/scripts/skeleton/scriptLoaderSkeleton"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import Script from "next/script"
 import { ScriptMetadata } from "@/components/dashboard/scripts/ScriptMetadata"
+import { api } from "@/lib/api-client"
+import { downloadBlob } from "@/lib/download"
 
-interface Script {
+interface ScriptData {
   id: string
   title: string
   content: string
@@ -27,90 +33,72 @@ interface Script {
   updated_at: string
   include_timestamps: boolean
   duration: string
+  credits_consumed: number
+  status: string
 }
 
 export default function ScriptPage() {
   const router = useRouter()
   const params = useParams()
-  const [script, setScript] = useState<Script | null>(null)
+  const [script, setScript] = useState<ScriptData | null>(null)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [loading, setLoading] = useState(false)
   const [isLoadingScript, setIsLoadingScript] = useState(true)
-
-  const limit = 90; // character limit before truncation
-
-  const [expandedContext, setExpandedContext] = useState(false);
-  const [expandedPrompt, setExpandedPrompt] = useState(false);
-
-
+  const [copiedTitle, setCopiedTitle] = useState(false)
+  const [copiedScript, setCopiedScript] = useState(false)
 
   const scriptId = params.id as string
 
   useEffect(() => {
     const fetchScript = async () => {
       if (!scriptId) return
-
       setIsLoadingScript(true)
       try {
-        const response = await fetch(`/api/scripts/${scriptId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.message || "Failed to fetch script")
-        }
-
-        const data: Script = await response.json()
+        const data = await api.get<ScriptData>(`/api/v1/script/${scriptId}`, { requireAuth: true })
         setScript(data)
         setTitle(data.title)
         setContent(data.content)
-      } catch (error: any) {
+      } catch (error: unknown) {
         toast.error("Error loading script", {
-          description: error.message || "Failed to fetch script details.",
+          description: error instanceof Error ? error.message : "Failed to fetch script details.",
         })
         router.push("/dashboard/scripts")
       } finally {
         setIsLoadingScript(false)
       }
     }
-
     fetchScript()
   }, [scriptId, router])
 
+  const copyToClipboard = async (text: string, type: "title" | "script") => {
+    try {
+      await navigator.clipboard.writeText(text)
+      if (type === "title") {
+        setCopiedTitle(true)
+        setTimeout(() => setCopiedTitle(false), 2000)
+      } else {
+        setCopiedScript(true)
+        setTimeout(() => setCopiedScript(false), 2000)
+      }
+      toast.success("Copied to clipboard!")
+    } catch {
+      toast.error("Failed to copy")
+    }
+  }
+
   const handleUpdateScript = async () => {
     if (!title || !content) {
-      toast.error("Missing information", {
-        description: "Please provide a title and content for the script.",
-      })
+      toast.error("Missing information", { description: "Please provide a title and content." })
       return
     }
-
     setLoading(true)
     try {
-      const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title, content }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to update script")
-      }
-
-      toast.success("Script updated!", {
-        description: "Your script changes have been saved successfully.",
-      })
-    } catch (error: any) {
+      await api.patch(`/api/v1/script/${scriptId}`, { title, content }, { requireAuth: true })
+      toast.success("Script updated!", { description: "Changes saved successfully." })
+    } catch (error: unknown) {
       toast.error("Error updating script", {
-        description: error.message || "Failed to update script.",
+        description: error instanceof Error ? error.message : "Failed to update.",
       })
     } finally {
       setLoading(false)
@@ -120,122 +108,142 @@ export default function ScriptPage() {
   const handleDeleteScript = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to delete script")
-      }
-
-      toast.success("Script deleted!", {
-        description: "The script has been successfully deleted.",
-      })
+      await api.delete(`/api/v1/script/${scriptId}`, { requireAuth: true })
+      toast.success("Script deleted!")
       router.push("/dashboard/scripts")
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Error deleting script", {
-        description: error.message || "Failed to delete script.",
+        description: error instanceof Error ? error.message : "Failed to delete.",
       })
     } finally {
       setLoading(false)
     }
   }
 
-  if (isLoadingScript) {
-    return (
-      <ScriptLoaderSkeleton />
-    )
+  const handleExport = async () => {
+    if (!scriptId) return
+    try {
+      const blob = await api.get<Blob>(`/api/v1/script/${scriptId}/export`, {
+        requireAuth: true,
+        responseType: "blob",
+      })
+      downloadBlob(blob, `${title || "script"}.pdf`)
+      toast.success("PDF exported!")
+    } catch {
+      toast.error("Failed to export PDF")
+    }
   }
 
-  if (!script) {
-    return null
-  }
+  if (isLoadingScript) return <ScriptLoaderSkeleton />
+  if (!script) return null
 
   return (
     <div className="container py-8">
-      <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:justify-between sm:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Script Details</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">View and edit your YouTube video script</p>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/dashboard/scripts")}
+            className="rounded-xl"
+            aria-label="Back to scripts"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Script Details</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">View and edit your script</p>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push("/dashboard/scripts")}
-          className="flex items-center gap-2 rounded-xl px-4 py-2 shadow-sm hover:bg-muted hover:text-foreground transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Scripts
-        </Button>
+        <div className="flex items-center gap-3">
+          {script.credits_consumed > 0 && (
+            <div className="flex items-center gap-1.5 text-sm text-slate-500">
+              <CreditCard className="h-4 w-4" />
+              <span>{script.credits_consumed} credit{script.credits_consumed > 1 ? "s" : ""} used</span>
+            </div>
+          )}
+          <Link href="/dashboard/scripts/new">
+            <Button variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Script
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Script Content</CardTitle>
-              <CardDescription>Modify the title and the main content of your script.</CardDescription>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Script Content</CardTitle>
+                  <CardDescription>Edit the title and content. Changes are saved when you click Save.</CardDescription>
+                </div>
+                <div className="flex items-center gap-1">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        disabled={loading}
+                        title="Delete script"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the script &quot;{script.title}&quot;.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteScript} className="bg-red-600 hover:bg-red-700">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleUpdateScript}
+                    disabled={loading}
+                    title="Save changes"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={handleExport} title="Export PDF">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/scripts/new")} title="Regenerate">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <ScriptEditor
-                script={content}
-                setScript={setContent}
+            <CardContent>
+              <ScriptContentEditor
                 title={title}
-                size="400"
                 setTitle={setTitle}
-                animation={false}
+                content={content}
+                setContent={setContent}
+                onCopyTitle={() => copyToClipboard(title, "title")}
+                onCopyScript={() => copyToClipboard(content, "script")}
+                copiedTitle={copiedTitle}
+                copiedScript={copiedScript}
               />
             </CardContent>
-            <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full sm:w-auto text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30 hover:border-red-500/50 transition-all focus-visible:ring-2 focus-visible:ring-red-500"
-                    disabled={loading}
-                  >
-                    Delete Script
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the script "{script.title}".
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteScript} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button
-                onClick={handleUpdateScript}
-                className="w-full sm:w-auto sm:max-w-[200px] bg-slate-900 hover:bg-slate-800 text-white transition-all hover:shadow-lg hover:shadow-purple-500/10 dark:hover:shadow-purple-400/10 focus-visible:ring-2 focus-visible:ring-purple-500/80"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            </CardFooter>
           </Card>
         </div>
 
         <div className="lg:col-span-1">
           <ScriptMetadata script={script} />
         </div>
-
       </div>
     </div>
   )

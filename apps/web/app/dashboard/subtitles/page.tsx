@@ -1,112 +1,193 @@
 "use client";
 
-import { SubtitleUploader } from "@/components/dashboard/subtitles/subtitleUploader";
-import { SubtitleHistory } from "@/components/dashboard/subtitles/subtitleHistory";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { motion } from "motion/react";
+import { Plus, Search } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { ContentCard } from "@/components/dashboard/common/ContentCard";
+import ContentCardSkeleton from "@/components/dashboard/common/skeleton/ContentCardSkeleton";
+import { EmptySvg } from "@/components/dashboard/common/EmptySvg";
 import { SubtitleResponse } from "@repo/validation";
 import { api } from "@/lib/api-client";
 
+const STATUS_COLORS: Record<string, string> = {
+    done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    processing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    queued: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.07 },
+    },
+};
+
+const emptyStateVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.4 },
+    },
+};
+
 export default function SubtitlesPage() {
     const [subtitles, setSubtitles] = useState<SubtitleResponse[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const refreshSubtitles = useCallback(async () => {
-        try {
-            setError(null);
-            setIsLoading(true);
-
-            const data = await api.get<SubtitleResponse[]>("/api/v1/subtitle", {
-                requireAuth: true,
-            });
-
-
-            setSubtitles(data);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Unknown error";
-            setError(errorMessage);
-            toast.error(`Error refreshing list: ${errorMessage}`);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
     useEffect(() => {
-        refreshSubtitles();
-    }, [refreshSubtitles]);
+        (async () => {
+            try {
+                const data = await api.get<SubtitleResponse[]>("/api/v1/subtitle", {
+                    requireAuth: true,
+                });
+                setSubtitles(data);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : "Unknown error";
+                toast.error("Error fetching subtitles", { description: msg });
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
 
-    const handleOptimisticDelete = async (id: string) => {
-        // 1. Backup current state in case of error
-        const previousSubtitles = [...subtitles];
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        const prev = [...subtitles];
+        setSubtitles((s) => s.filter((item) => item.id !== itemToDelete));
 
-        // 2. Optimistically update UI (Remove immediately)
-        setSubtitles((prev) => prev.filter((item) => item.id !== id));
-
-        // 3. Close UI interactions are already handled, now talk to server silently
         try {
             const res = await api.delete<{ success: boolean; message: string }>(
-                `/api/v1/subtitle/${id}`,
+                `/api/v1/subtitle/${itemToDelete}`,
                 { requireAuth: true }
             );
-
             if (!res.success) throw new Error(res.message);
-
-            // Success! No need to do anything, UI is already correct.
-            toast.success("Subtitle deleted successfully");
-        } catch (err) {
-            // 4. If error, Rollback UI
-            setSubtitles(previousSubtitles);
+            toast.success("Subtitle project deleted");
+        } catch {
+            setSubtitles(prev);
             toast.error("Failed to delete. Item restored.");
-            console.error(err);
+        } finally {
+            setItemToDelete(null);
         }
     };
 
+    if (loading) return <ContentCardSkeleton />;
+
+    const filteredSubtitles = subtitles
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .filter((s) => {
+            const q = searchQuery.toLowerCase();
+            const displayTitle = s.title || s.filename;
+            return (
+                displayTitle.toLowerCase().includes(q) ||
+                s.language.toLowerCase().includes(q) ||
+                s.status.toLowerCase().includes(q)
+            );
+        });
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30">
-            <div className="container mx-auto max-w-5xl space-y-8 p-4 md:p-8">
-                {/* Animated Header */}
-                <motion.div
-                    className="space-y-2 border-b border-gray-100 pb-6"
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-gray-800 to-purple-900 bg-clip-text text-transparent">
-                        Subtitle Generator
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                        Upload your videos and generate subtitles effortlessly
+        <motion.div
+            className="container py-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">My Subtitles</h1>
+                    <p className="text-slate-600 dark:text-slate-400 mt-1">
+                        Manage all your generated subtitle projects
                     </p>
-                </motion.div>
-
-                {/* Animated Uploader */}
-                <motion.div
-                    className="rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-200"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    whileHover={{ y: -2 }}
-                >
-                    <SubtitleUploader onUploadSuccess={refreshSubtitles} />
-                </motion.div>
-
-                {/* Animated History */}
-                <motion.div
-                    className="rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                    <SubtitleHistory
-                        subtitles={subtitles}
-                        isLoading={isLoading}
-                        error={error}
-                        onDelete={handleOptimisticDelete}
-                    />
-                </motion.div>
+                </div>
+                <Link href="/dashboard/subtitles/new">
+                    <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all hover:shadow-lg hover:shadow-purple-500/10 dark:hover:shadow-purple-400/10">
+                        <Plus className="mr-2 h-4 w-4" />
+                        New Subtitle
+                    </Button>
+                </Link>
             </div>
-        </div>
+
+            <div className="mb-8">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+                    <Input
+                        placeholder="Search by title, language, or status..."
+                        className="pl-10 focus-visible:ring-2 focus-visible:ring-purple-500/80"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+                {filteredSubtitles.length > 0 ? (
+                    <motion.div
+                        key="subtitle-list"
+                        className="grid grid-cols-1 gap-4"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        {filteredSubtitles.map((item) => (
+                            <ContentCard
+                                key={item.id}
+                                id={item.id}
+                                title={item.title || item.filename}
+                                created_at={item.created_at}
+                                onDelete={handleDelete}
+                                setToDelete={setItemToDelete}
+                                type="subtitles"
+                                statusBadge={
+                                    <Badge
+                                        variant="secondary"
+                                        className={STATUS_COLORS[item.status] || ""}
+                                    >
+                                        {item.status}
+                                    </Badge>
+                                }
+                            />
+                        ))}
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="empty-state"
+                        variants={emptyStateVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <div className="text-center py-16">
+                            <div className="flex flex-col items-center">
+                                <EmptySvg className="h-32 w-auto mb-6 text-slate-300 dark:text-slate-700" />
+                                <h3 className="font-semibold text-xl text-slate-800 dark:text-slate-200 mb-2">
+                                    {searchQuery ? "No results found" : "Generate your first subtitles"}
+                                </h3>
+                                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                                    {searchQuery
+                                        ? `No subtitles matching "${searchQuery}".`
+                                        : "Upload a video and let AI generate studio-quality subtitles in minutes."}
+                                </p>
+                                {!searchQuery && (
+                                    <Link href="/dashboard/subtitles/new">
+                                        <Button className="bg-slate-900 hover:bg-slate-800 text-white transition-all">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Create Subtitle
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 }

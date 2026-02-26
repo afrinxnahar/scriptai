@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Lenis from 'lenis'
-import { cn } from "@/lib/utils"; // Make sure you have this utility
-import Footer from "@/components/footer";
-import { ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils"
+import Footer from "@/components/footer"
+import { ArrowLeft } from "lucide-react"
 import { useRouter } from 'next/navigation'
 
 // Define sections for the Table of Contents
@@ -28,18 +28,20 @@ const PrivacyAndTerms = () => {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<string>("overview");
 
-  // Lenis Smooth Scroll Effect with proper cleanup
+  const rafIdRef = useRef<number>(0);
+
   useEffect(() => {
     const lenis = new Lenis();
 
     function raf(time: number) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      rafIdRef.current = requestAnimationFrame(raf);
     }
 
-    requestAnimationFrame(raf);
+    rafIdRef.current = requestAnimationFrame(raf);
 
     return () => {
+      cancelAnimationFrame(rafIdRef.current);
       lenis.destroy();
     }
   }, []);
@@ -109,8 +111,8 @@ const PrivacyAndTerms = () => {
           <main className="lg:col-span-3 space-y-12">
             <PolicySection id="overview" title="1. Overview">
               <p>
-                Script AI is an AI-powered assistant that helps content creators generate high-quality
-                YouTube scripts, titles, thumbnails, and course modules. By using our service, you agree
+                Creator AI is an AI-powered assistant that helps content creators generate high-quality
+                YouTube scripts, titles, thumbnails, and courses. By using our service, you agree
                 to the following privacy and usage terms.
               </p>
             </PolicySection>
@@ -121,7 +123,7 @@ const PrivacyAndTerms = () => {
                 <li>Your email and basic YouTube profile information.</li>
                 <li>Channel and video metadata (titles, descriptions, tags).</li>
                 <li>Videos or links you provide for training.</li>
-                <li>Content you generate with Script AI.</li>
+                <li>Content you generate with Creator AI.</li>
                 <li>Basic usage metrics to improve our service.</li>
               </ul>
             </PolicySection>
@@ -188,7 +190,7 @@ const PrivacyAndTerms = () => {
 
             <PolicySection id="google-api-disclosure" title="10. Google API Disclosure">
               <p>
-                Script AI’s use and transfer of information received from Google APIs will adhere to the{" "}
+                Creator AI’s use and transfer of information received from Google APIs will adhere to the{" "}
                 <PolicyLink href="https://developers.google.com/terms/api-services-user-data-policy">
                   Google API Services User Data Policy
                 </PolicyLink>, including the Limited Use requirements.

@@ -1,156 +1,232 @@
-# Script AI: Personalized creator tool for YouTubers
+# Creator AI
 
-> **Transform your YouTube content creation with AI that learns your style and voice.** Script AI is a personalized AI assistant that helps YouTubers generate scripts, thumbnails, subtitles, and more - all tailored to their unique content style and audience.
+> **AI that learns your style and helps you create content faster.** Creator AI analyzes your existing YouTube videos to understand your tone, vocabulary, and structure — then generates scripts, subtitles, ideas, stories, and more — all personalized to you.
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-7289DA?style=for-the-badge&logo=discord)](https://discord.com/invite/k9sZcq2gNG)
 [![GitHub Stars](https://img.shields.io/github/stars/scriptaiapp/scriptai?style=for-the-badge)](https://github.com/scriptaiapp/scriptai/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-### 🎯 Core AI Features
-- **Script Generation** - AI learns your style from 3-5 videos
-- **Smart Idea Research** - Web research and PDF analysis for new content ideas
-- **AI Thumbnail Creator** - Generate thumbnails matching your channel's style
-- **Multi-language Subtitles** - Create editable subtitles in multiple languages
-- **Voice Cloning Dubbing** - Translate audio in multiple languages by cloning your voice
-- **Course Module Builder** - Complete course creation for educators
+## Features
 
-## Future Features
+- **AI Style Training** — Connect YouTube, provide 3–5 videos, and the AI learns your unique tone, vocabulary, and pacing
+- **Script Generation** — Personalized video scripts via BullMQ worker; supports file attachments, storytelling mode, timestamps, multi-language output, and PDF export
+- **Ideation** — AI-powered idea generation with live web search, trend snapshots, opportunity scoring, content angles, and sources; export as PDF/JSON
+- **Story Builder** — Structured narrative generation from a topic with real-time SSE progress
+- **Subtitle Generation** — Upload video (max 200 MB / 10 min), auto-generate timed subtitles, translate, edit in-app, export as SRT/VTT, burn into video via FFmpeg
+- **Audio/Video Dubbing** — Dub media into 24+ languages via Murf.ai with real-time progress
+- **Billing & Subscriptions** — Stripe-powered checkout, customer portal, webhook handling, and plan management
+- **Credit System** — Token-based credits consumed per AI operation, tracked automatically
+- **Referral Program** — Unique referral codes, track referrals, earn bonus credits
+- **Auth** — Email/password and Google OAuth, OTP-based password reset, email verification via Supabase Auth
+- **Profile & Settings** — Avatar upload, notification preferences, billing info
 
-- **AI Video Generator**: Create AI-generated videos, reels like Sora, Veo.
-- **Multi-Platform**: Expand the features for platforms like TikTok, Instagram Reels, or podcasts.
-- **Collaboration Mode**: Real-time collaboration for teams.
-- **Advanced Personalization**: Train AI with custom fine-tuned model.
+### Coming Soon
 
-### 🛠️ Developer Experience
-- **Modern Tech Stack** - Next.js 15, React 19, TypeScript, Tailwind CSS, Supabase
-- **Monorepo Architecture** - Turbo + pnpm for efficient development
-- **Comprehensive Testing** - Jest, E2E testing, and linting
-- **Type Safety** - Full TypeScript coverage with Zod validation
+- **Thumbnail Generator** — AI-generated thumbnail descriptions (backend ready)
+- **Course Module Builder** — Structured course outlines from a topic (backend ready)
+- **AI Video Generator** — Page placeholder at `/dashboard/video-generation`
 
-## 🚀 Quick Start
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend | NestJS, TypeScript, Zod validation |
+| Database | Supabase (PostgreSQL), Row-Level Security |
+| Auth | Supabase Auth (JWT), Google OAuth |
+| AI | Google Gemini 2.5 Flash, OpenAI GPT-4o |
+| Payments | Stripe (Checkout, Billing Portal, Webhooks) |
+| Dubbing | Murf.ai |
+| Jobs | BullMQ + Redis (train-ai, script, ideation, story-builder queues) |
+| Media | FFmpeg, Supabase Storage |
+| Email | Resend |
+| Monorepo | Turborepo + pnpm workspaces |
+
+## Project Structure
+
+```
+creatorai/
+├── apps/
+│   ├── web/                          # Next.js 15 frontend
+│   │   ├── app/
+│   │   │   ├── dashboard/
+│   │   │   │   ├── train/            # AI style training
+│   │   │   │   ├── scripts/          # Script generation & editing
+│   │   │   │   ├── research/         # Ideation & idea research
+│   │   │   │   ├── story-builder/    # Narrative structure builder
+│   │   │   │   ├── subtitles/        # Subtitle generation & editing
+│   │   │   │   ├── dubbing/          # Audio/video dubbing
+│   │   │   │   ├── thumbnails/       # Thumbnail generator (coming soon)
+│   │   │   │   ├── courses/          # Course builder (coming soon)
+│   │   │   │   ├── video-generation/ # Video generator (coming soon)
+│   │   │   │   ├── settings/         # User settings & billing
+│   │   │   │   └── referrals/        # Referral program
+│   │   │   └── api/                  # Next.js API routes
+│   │   ├── components/               # React components
+│   │   ├── hooks/                    # Custom React hooks
+│   │   └── lib/                      # Utilities & API helpers
+│   └── api/                          # NestJS backend
+│       └── src/
+│           ├── auth/                 # Password reset (OTP flow)
+│           ├── billing/              # Stripe checkout, portal, webhooks
+│           ├── ideation/             # AI idea generation (BullMQ)
+│           ├── script/               # Script generation (BullMQ)
+│           ├── story-builder/        # Story structure generation (BullMQ)
+│           ├── subtitle/             # Subtitle CRUD + burn (FFmpeg)
+│           ├── dubbing/              # Dubbing via Murf.ai
+│           ├── train-ai/             # AI training job queue
+│           ├── thumbnail/            # Thumbnail generation
+│           ├── course/               # Course module builder
+│           ├── referral/             # Referral system
+│           ├── youtube/              # YouTube OAuth & channel data
+│           ├── upload/               # File uploads
+│           ├── support/              # Issue reporting
+│           └── supabase/             # Supabase client module
+├── packages/
+│   ├── validations/                  # Shared Zod schemas, types & credit utils
+│   ├── supabase/                     # Supabase migrations & client utilities
+│   ├── train-ai-worker/              # BullMQ workers (train-ai, script, ideation, story-builder)
+│   ├── email-templates/              # Email templates (OTP, welcome)
+│   ├── config/                       # Shared constants
+│   ├── ui/                           # Shared UI components
+│   └── api/                          # Shared API types
+├── docs/
+│   └── SETUP.md                      # Detailed development setup guide
+├── docker-compose.yml                # Redis + worker services
+└── turbo.json                        # Turborepo pipeline config
+```
+
+## Quick Start
 
 ### Prerequisites
-- **Node.js** 19.x or higher
-- **pnpm** package manager
-- **Git** for version control
 
-### Local Development Setup
+- **Node.js** 18+ — [nodejs.org](https://nodejs.org/)
+- **pnpm** — `npm install -g pnpm`
+- **Git** — [git-scm.com](https://git-scm.com/)
+- **Docker** (optional) — for Redis via `docker compose`
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/scriptaiapp/scriptai.git
-   cd scriptai
-   ```
+### 1. Clone & Install
 
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
+```bash
+git clone https://github.com/scriptaiapp/scriptai.git
+cd scriptai
+pnpm install
+```
 
-3. **Set up Supabase**
-   - Create a fresh Supabase project at [supabase.com/dashboard](https://supabase.com/dashboard) (free tier is fine for development).
-   - Run `pnpx supabase login` and follow the prompts to log in with your Supabase account (if not already logged in).
-   - Get your project's Database URL from the Supabase dashboard (Settings > Database > Connection String; use the `postgresql://` format).
-   - Apply the existing schema to your new database:
-     ```bash
-     pnpx supabase db push --db-url <your-supabase-db-url>
-     ```
-   - Note: This uses the schema from `packages/supabase/migrations/` and won't add any seed data.
+### 2. Set Up Supabase
 
-4. **Set up environment variables**
-   ```bash
-   # Copy example environment files
-   cp apps/web/.env.example apps/web/.env
-   cp apps/api/.env.example apps/api/.env
-   ```
-   - Edit `apps/web/.env` and `apps/api/.env` to include your Supabase credentials:
-     ```
-     SUPABASE_URL=<your-supabase-project-url>
-     SUPABASE_ANON_KEY=<your-supabase-anon-key>
-     ```
-     (Get these from your Supabase dashboard under Settings > API.)
+1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard)
+2. Get your Database URL from **Settings > Database > Connection String**
+3. Apply the schema:
 
-5. **Start development servers**
-   ```bash
-   pnpm run dev
-   ```
+```bash
+pnpx supabase login
+pnpx supabase db push --db-url <your-supabase-db-url>
+```
 
-6. **Open your browser**
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend: [http://localhost:8000](http://localhost:8000)
+### 3. Configure Environment
 
-## 🛠️ Available Scripts
+```bash
+cp .env.example .env
+cp apps/web/.env.example apps/web/.env
+cp apps/api/.env.example apps/api/.env
+cp packages/train-ai-worker/.env.example packages/train-ai-worker/.env
+```
+
+Edit each `.env` file with your credentials. See the `.env.example` files for required keys.
+
+<details>
+<summary>Required services & API keys</summary>
+
+| Service | Key | Required | Purpose |
+|---------|-----|----------|---------|
+| Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` | Yes | Database, auth, storage |
+| Google AI | `GOOGLE_GENERATIVE_AI_API_KEY` | Yes | Script generation, ideation, training |
+| Redis | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` | Yes | BullMQ job queues |
+| OpenAI | `OPENAI_API_KEY` | Optional | Subtitle generation |
+| Resend | `RESEND_API_KEY` | Optional | Transactional emails |
+| YouTube | `YOUTUBE_API_KEY` | Optional | Channel integration |
+| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional | YouTube OAuth |
+| Murf.ai | `MURF_API_KEY` | Optional | Audio/video dubbing |
+| Stripe | via billing module config | Optional | Payments & subscriptions |
+
+</details>
+
+### 4. Start Development
+
+```bash
+# Start Redis (if using Docker)
+docker compose up -d
+
+# Start all dev servers (frontend + backend + worker)
+pnpm run dev
+
+# Or start individually
+pnpm run dev --filter=web     # Frontend only — http://localhost:3000
+pnpm run dev --filter=api     # Backend only  — http://localhost:8000
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend | [http://localhost:3000](http://localhost:3000) |
+| Backend API | [http://localhost:8000](http://localhost:8000) |
+
+## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `pnpm run dev` | Start all development servers |
-| `pnpm run dev:new` | Start web app on port 4000 |
+| `pnpm run dev` | Start all dev servers (Turborepo) |
+| `pnpm run dev --filter=web` | Start frontend only |
+| `pnpm run dev --filter=api` | Start backend only |
 | `pnpm run build` | Build all packages and apps |
-| `pnpm run test` | Run all tests |
-| `pnpm run test:e2e` | Run end-to-end tests |
+| `pnpm run test` | Run tests |
 | `pnpm run lint` | Lint all code |
-| `pnpm run format` | Format code with Prettier |
+| `pnpm run type-check` | TypeScript type checking |
+| `pnpm run format` | Format with Prettier |
 
-## 🏗️ Project Structure
+## Architecture Overview
 
 ```
-scriptai/
-├── apps/
-│   ├── web/                    # Next.js frontend
-│   │   ├── app/               # App Router pages
-│   │   │   ├── dashboard/     # Main app features
-│   │   │   │   ├── scripts/   # Script generation
-│   │   │   │   ├── research/  # Idea research
-│   │   │   │   ├── train/     # AI model training
-│   │   │   │   ├── thumbnails/# Thumbnail generation
-│   │   │   │   ├── subtitles/ # Subtitle creation
-│   │   │   │   ├── dubbing/   # Audio translation
-│   │   │   │   └── courses/   # Course modules
-│   │   │   └── api/           # Next.js API routes
-│   │   ├── components/        # React components
-│   │   ├── hooks/            # Custom React hooks
-│   │   └── lib/              # Utilities & config
-│   └── api/                   # NestJS backend
-├── packages/
-│   ├── ui/                   # Shared UI components
-│   ├── api/                  # Shared API types
-│   ├── validations/          # Zod schemas
-│   └── config/              # Shared configs
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Next.js    │────▶│   NestJS     │────▶│  Supabase    │
+│   Frontend   │     │   Backend    │     │  (Postgres)  │
+└──────────────┘     └──────┬───────┘     └──────────────┘
+                            │
+                     ┌──────▼───────┐     ┌──────────────┐
+                     │   BullMQ     │────▶│  AI Workers   │
+                     │   (Redis)    │     │  (Gemini/GPT) │
+                     └──────────────┘     └──────────────┘
 ```
 
-## 🤝 Contributing
+- **Frontend** calls Next.js API routes for AI operations (scripts, ideation) and the NestJS backend for subtitles, dubbing, training, and billing.
+- **Backend** validates requests, manages auth, and enqueues long-running AI tasks to BullMQ.
+- **Workers** process queued jobs (training, script generation, ideation, story builder) with SSE progress streaming back to the client.
+- **Supabase** handles auth, database (with RLS), and file storage.
 
-We love contributions! Whether you're fixing bugs, adding features, or improving documentation, your help is welcome.
+## Documentation
 
-### Getting Started
-1. **Join our Discord** - [https://discord.gg/k9sZcq2gNG](https://discord.gg/k9sZcq2gNG)
-2. **Check existing issues** - Look for "Good First Issue" labels
-3. **Read our contributing guide** - [CONTRIBUTING.md](./CONTRIBUTING.md)
-4. **Fork and clone** - Create your own fork of the repository
-5. **Create a branch** - Use descriptive branch names (`feat:add-new-feature`)
-6. **Make and test the changes** - Follow our coding standards
-7. **Submit a PR** - Include well written description of what the PR does, include screenshots/videos if needed.
+| Document | Description |
+|----------|-------------|
+| [Requirements](./requirements.md) | Full feature specification |
+| [Setup Guide](./docs/SETUP.md) | Detailed development environment setup |
+| [API Docs](./apps/api/README.md) | Backend endpoints reference |
+| [Web App Docs](./apps/web/README.md) | Frontend pages & routes |
+| [Database Schema](./packages/supabase/README.md) | Supabase schema documentation |
+| [Contributing Guide](./CONTRIBUTING.md) | How to contribute |
+| [Code of Conduct](./CODE_OF_CONDUCT.md) | Community guidelines |
 
-See our [Contributing Guide](./CONTRIBUTING.md) for detailed information about our development process, coding standards, and how to submit your first contribution.
+## Contributing
 
-## 📚 Documentation
+1. Join [Discord](https://discord.gg/k9sZcq2gNG)
+2. Read the [Contributing Guide](./CONTRIBUTING.md) and [Setup Guide](./docs/SETUP.md)
+3. Check issues labeled **"Good First Issue"**
+4. Fork, branch, code, and submit a PR
 
-- [Contributing Guide](./CONTRIBUTING.md) - How to contribute to ScriptAI
-- [Code of Conduct](./CODE_OF_CONDUCT.md) - Community guidelines
-- [Setup Guide](./docs/SETUP.md) - Development environment setup
-- [Security Policy](./SECURITY.md) - Security guidelines
+## Community
 
-## 🌟 Community
+- [Discord](https://discord.com/invite/k9sZcq2gNG) — Questions, discussions, and support
+- [GitHub Issues](https://github.com/scriptaiapp/scriptai/issues) — Bug reports and feature requests
 
-- **Discord** - [Join our community](https://discord.com/invite/k9sZcq2gNG)
-<!-- - **Twitter/X** - [@ScriptAI](https://twitter.com/ScriptAI) -->
-- **GitHub** - [Star us on GitHub](https://github.com/scriptaiapp/scriptai)
-- **Issues** - [Report bugs or request features](https://github.com/scriptaiapp/scriptai/issues)
+## License
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
----
-
-**Made with ❤️ by the Script AI community**
+MIT — see [LICENSE](./LICENSE)

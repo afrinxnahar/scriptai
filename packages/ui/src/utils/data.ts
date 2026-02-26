@@ -4,11 +4,10 @@ export const navItem = [
   { name: "Pricing", href: "/#pricing" },
 ]
 
-export const footerItems = {
+export const footerItems: FooterSection = {
   "Product": [
     { name: "Features", href: "./#features" },
     { name: "Pricing", href: "./#pricing" },
-    { name: "Book a Call", href: "https://cal.com/afrin/30min" },
     { name: "Contact Us", href: "/contact-us" },
   ],
   "Company": [
@@ -21,12 +20,11 @@ export const footerItems = {
   "Legal": [
     { name: "Privacy Policy", href: "/privacy" },
   ],
-};
+}
 
 export const issueTypes = [
   { value: "Bug Report", label: "Bug Report" },
   { value: "Feature Request", label: "Feature Request" },
   { value: "Other", label: "Other" },
-];
-
+]
 

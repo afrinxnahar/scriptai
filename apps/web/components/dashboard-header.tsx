@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, LogOut, Settings, UserPlus, Gem } from "lucide-react";
+import { Menu, LogOut, Settings, UserPlus, Coins } from "lucide-react";
 import { useSupabase } from "@/components/supabase-provider";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,7 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ sidebarCollapsed, setSidebarCollapsed }: DashboardHeaderProps) {
   const pathname = usePathname();
-  const { supabase, user, profile: initialProfile } = useSupabase();
+  const { user, profile: initialProfile, logout } = useSupabase();
   const [pageTitle, setPageTitle] = useState("");
   const [profile, setProfile] = useState(initialProfile);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -40,18 +40,10 @@ export default function DashboardHeader({ sidebarCollapsed, setSidebarCollapsed 
     setIsPopoverOpen(false);
   }, [pathname]);
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      router.push("/");
-      toast.success("Logged out successfully");
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error("Error logging out: " + error.message);
-      } else {
-        toast.error("An unknown error occurred during logout.");
-      }
-    }
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    router.replace("/");
+    logout();
   };
 
   return (
@@ -71,9 +63,12 @@ export default function DashboardHeader({ sidebarCollapsed, setSidebarCollapsed 
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-1.5 text-sm">
-          <Gem className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold">{profile?.credits || "0"}</span>
+        <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500/10 to-indigo-500/10 dark:from-purple-500/20 dark:to-indigo-500/20 px-3.5 py-1.5 text-sm ring-1 ring-purple-500/20 dark:ring-purple-400/20">
+          <Coins className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+          <span className="font-semibold bg-gradient-to-r from-purple-700 to-indigo-600 dark:from-purple-300 dark:to-indigo-300 bg-clip-text text-transparent">
+            {profile?.credits || "0"}
+          </span>
+          <span className="text-xs text-muted-foreground hidden sm:inline">credits</span>
         </div>
 
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>

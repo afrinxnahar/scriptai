@@ -21,7 +21,7 @@ export default function HowItWorks() {
                     transition={{ duration: 0.5 }}
                     className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white"
                 >
-                    How Script AI Works
+                    How Creator AI Works
                 </motion.h2>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}

@@ -1,68 +1,44 @@
-export interface Script {
-    id: string
-    title: string
-    content?: string
-    created_at: string
-    updated_at?: string
-    user_id: string
-}
+import { api } from "@/lib/api-client"
+import { toast } from "sonner"
 
+export interface Script {
+  id: string
+  title: string
+  content?: string
+  tone?: string
+  language?: string
+  status?: string
+  credits_consumed?: number
+  created_at: string
+  updated_at?: string
+  user_id?: string
+}
 
 export async function getScripts(): Promise<Script[]> {
-    try {
-        const res = await fetch("/api/scripts", {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            cache: "no-store",
-        })
-
-        if (!res.ok) {
-            throw new Error(`Failed to fetch scripts: ${res.statusText}`)
-        }
-
-        return await res.json()
-    } catch (error) {
-        console.error("Error fetching scripts:", error)
-        return []
-    }
+  try {
+    return await api.get<Script[]>("/api/v1/script", { requireAuth: true })
+  } catch {
+    toast.error("Failed to load scripts")
+    return []
+  }
 }
 
-
 export async function updateScript(
-    id: string,
-    data: Partial<Pick<Script, "title" | "content">>
+  id: string,
+  data: Partial<Pick<Script, "title" | "content">>
 ): Promise<Script | null> {
-    try {
-        const res = await fetch(`/api/scripts/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        })
-
-        if (!res.ok) {
-            throw new Error(`Failed to update script: ${res.statusText}`)
-        }
-
-        return await res.json()
-    } catch (error) {
-        console.error(`Error updating script with ID ${id}:`, error)
-        return null
-    }
+  try {
+    return await api.patch<Script>(`/api/v1/script/${id}`, data, { requireAuth: true })
+  } catch {
+    return null
+  }
 }
 
 export async function deleteScript(id: string): Promise<boolean> {
-    try {
-        const res = await fetch(`/api/scripts/${id}`, {
-            method: "DELETE",
-        })
-
-        if (!res.ok) {
-            throw new Error(`Failed to delete script: ${res.statusText}`)
-        }
-
-        return true
-    } catch (error) {
-        console.error(`Error deleting script with ID ${id}:`, error)
-        return false
-    }
+  try {
+    await api.delete(`/api/v1/script/${id}`, { requireAuth: true })
+    return true
+  } catch {
+    return false
+  }
 }

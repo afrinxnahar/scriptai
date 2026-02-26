@@ -8,6 +8,8 @@ export const FeatureType = {
   COURSE_MODULE: 'course_module',
   DUBBING: 'dubbing',
   AI_TRAINING: 'ai_training',
+  STORY_BUILDER: 'story_builder',
+  IDEATION: 'ideation',
 } as const;
 
 export type FeatureType = (typeof FeatureType)[keyof typeof FeatureType];
@@ -37,4 +39,20 @@ export function hasEnoughCredits(userCredits: number, requiredCredits: number): 
 
 export function getMinimumCreditsForGemini(): number {
   return 1;
+}
+
+export function getMinimumCreditsForIdeation(): number {
+  return 2;
+}
+
+export function calculateIdeationCredits(params: TokenBasedCreditParams): number {
+  return Math.max(2, calculateCreditsFromTokens(params));
+}
+
+export function getMinimumCreditsForStoryBuilder(): number {
+  return 2;
+}
+
+export function calculateStoryBuilderCredits(params: TokenBasedCreditParams): number {
+  return Math.max(2, calculateCreditsFromTokens(params));
 }

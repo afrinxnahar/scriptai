@@ -1,20 +1,37 @@
 import { toast } from "sonner"
-import { SupabaseClient } from "@supabase/supabase-js"
+import type { SupabaseClient, User } from "@supabase/supabase-js"
 
 interface ConnectYoutubeProps {
   supabase: SupabaseClient
-  user: any
+  user: User | null
   setIsConnectingYoutube: (value: boolean) => void
+  loginHint?: string
+}
+
+export const isGoogleProvider = (user: User | null): boolean => {
+  const provider = user?.app_metadata?.provider
+  const providers: string[] = user?.app_metadata?.providers ?? []
+  return provider === "google" || providers.includes("google")
 }
 
 export const connectYoutubeChannel = async ({
   supabase,
   user,
   setIsConnectingYoutube,
+  loginHint,
 }: ConnectYoutubeProps) => {
   setIsConnectingYoutube(true)
   try {
     if (!user?.id) throw new Error("User not authenticated.")
+
+    const queryParams: Record<string, string> = {
+      access_type: "offline",
+      prompt: "consent",
+    }
+
+    if (loginHint) {
+      queryParams.login_hint = loginHint
+    }
 
     // Proceed directly with Supabase OAuth
     const { data: oauthData, error: oauthError } =
@@ -24,10 +41,7 @@ export const connectYoutubeChannel = async ({
           redirectTo: `${window.location.origin}/api/youtube/callback`,
           scopes:
             "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/youtube.readonly",
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
+          queryParams,
         },
       })
 
@@ -40,7 +54,7 @@ export const connectYoutubeChannel = async ({
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred."
-    console.error("YouTube Connection Error:", errorMessage)
+    // Error is already shown to the user via toast
     toast.error(errorMessage)
   } finally {
     setIsConnectingYoutube(false)

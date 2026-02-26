@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -19,8 +20,11 @@ interface PendingProject {
   mediaName: string;
 }
 
+const DUBBING_TIMEOUT = 600_000; // 10 minutes
+
 @Injectable()
 export class DubbingService {
+  private readonly logger = new Logger(DubbingService.name);
   private readonly supabase = createSupabaseClient(
     getSupabaseServiceEnv().url,
     getSupabaseServiceEnv().key,
@@ -37,14 +41,9 @@ export class DubbingService {
   }
 
 
-  async createDub(userId: string, dto: CreateDubInput): Promise<any> {
-    console.log('Creating Dubbing Project for user:', userId);
-
+  async createDub(userId: string, dto: CreateDubInput): Promise<{ projectId: string }> {
     const targetLocale = murfLocaleMap[dto.targetLanguage as SupportedLanguage];
     if (!targetLocale) throw new BadRequestException('Unsupported language');
-
-    // Download file from Supabase storage URL
-    console.log('Downloading file from Supabase:', dto.mediaUrl);
     const fileResponse = await axios.get(dto.mediaUrl, {
       responseType: 'arraybuffer',
     });
@@ -67,8 +66,6 @@ export class DubbingService {
     formData.append('target_locales', targetLocale);
     formData.append('priority', 'NORMAL');
 
-    // Create dubbing job with Murf.ai
-    console.log('Creating Murf dubbing job...');
     let createResponse;
     try {
       createResponse = await axios.post(
@@ -84,15 +81,12 @@ export class DubbingService {
         },
       );
 
-      console.log('createResponse', createResponse.data);
-    } catch (error: any) {
-      console.error('Error creating Murf dubbing job:', error);
+    } catch (error) {
+      this.logger.error('Error creating Murf dubbing job', error);
       throw error;
     }
 
     const projectId = createResponse.data.job_id;
-
-    console.log('Created Murf dubbing job:', projectId);
 
     // Store pending project data in memory - will save to DB on completion
     this.pendingProjects.set(projectId, {
@@ -120,9 +114,8 @@ export class DubbingService {
       const pollStatus = async () => {
         const start = Date.now();
         let delay = 5_000;
-        const TIMEOUT = 600_000; // 10 minutes
 
-        while (!closed && Date.now() - start < TIMEOUT) {
+        while (!closed && Date.now() - start < DUBBING_TIMEOUT) {
           try {
             const statusResponse = await axios.get(
               `${this.baseURL}/jobs/${projectId}/status`,
@@ -130,7 +123,6 @@ export class DubbingService {
             );
 
             const { status, download_details, credits_used, failure_reason } = statusResponse.data;
-            console.log(`Dubbing status: ${status}`, statusResponse.data);
 
             if (status === 'FAILED') {
               this.pendingProjects.delete(projectId);
@@ -164,7 +156,7 @@ export class DubbingService {
 
             // Still processing - send progress update
             const elapsed = Date.now() - start;
-            const progress = Math.min(20 + Math.floor((elapsed / TIMEOUT) * 80), 90);
+            const progress = Math.min(20 + Math.floor((elapsed / DUBBING_TIMEOUT) * 80), 90);
             sendEvent({
               state: 'processing',
               progress,
@@ -174,8 +166,8 @@ export class DubbingService {
 
             await new Promise((r) => setTimeout(r, delay));
             delay = Math.min(delay * 1.5, 20_000);
-          } catch (err: any) {
-            console.error('Status check failed:', err.message);
+          } catch (err) {
+            this.logger.error('Status check failed', err);
             this.pendingProjects.delete(projectId);
             sendEvent({
               state: 'failed',
@@ -219,8 +211,6 @@ export class DubbingService {
 
     const { userId, isVideo, originalMediaUrl, targetLanguage, mediaName } = pending;
 
-    // Download the dubbed media from Murf.ai
-    console.log('Downloading dubbed file from Murf.ai');
     const dubbedResponse = await axios.get(dubbedUrl, {
       responseType: 'arraybuffer',
     });
@@ -246,8 +236,6 @@ export class DubbingService {
     const {
       data: { publicUrl },
     } = this.supabase.storage.from('dubbing_media').getPublicUrl(filePath);
-
-    console.log('Dubbed file uploaded:', publicUrl);
 
     // Insert completed project to database
     const { error: insertErr } = await this.supabase
@@ -338,8 +326,7 @@ export class DubbingService {
         },
       });
     } catch (err) {
-      console.error('Failed to delete Murf job:', err);
-      // Continue even if Murf deletion fails
+      this.logger.warn('Failed to delete Murf job', err);
     }
   }
 }

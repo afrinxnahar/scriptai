@@ -12,6 +12,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Download, BookOpen, Clock } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { toast } from "sonner"
+import { downloadBlob } from "@/lib/download"
+
+interface CourseVideo {
+  id: number
+  title: string
+  duration: string
+  description: string
+  script: string
+}
+
+interface CourseModule {
+  title: string
+  description: string
+  videoCount: number
+  difficulty: string
+  estimatedDuration: string
+  videos: CourseVideo[]
+}
 
 export default function CourseModuleGenerator() {
   const router = useRouter()
@@ -21,13 +39,13 @@ export default function CourseModuleGenerator() {
   const [videoCount, setVideoCount] = useState("5")
   const [references, setReferences] = useState("")
   const [loading, setLoading] = useState(false)
-  const [courseModule, setCourseModule] = useState<any>(null)
-  const [isComingSoon] = useState(true) // Toggle this to false when feature is released
+  const [courseModule, setCourseModule] = useState<CourseModule | null>(null)
+  const [isComingSoon] = useState(true)
 
   const handleGenerateCourseModule = async () => {
     if (isComingSoon) return // Prevent interaction when coming soon
     if (!topic) {
-      toast.error("Topic required!", { description: "Please enter a course topic to generate a module." })
+      toast.error("Topic required!", { description: "Please enter a course topic to build your course." })
       return
     }
 
@@ -73,9 +91,10 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
 
       setCourseModule(sampleCourseModule)
 
-      toast.success("Course module generated!", { description: "Your course module has been generated successfully." })
-    } catch (error: any) {
-      toast.error(error.message || "An unexpected error occurred", { description: "Please try again later." })
+      toast.success("Course built!", { description: "Your course has been built successfully." })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred"
+      toast.error(message, { description: "Please try again later." })
     } finally {
       setLoading(false)
     }
@@ -86,22 +105,15 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
 
     const moduleText = JSON.stringify(courseModule, null, 2)
     const blob = new Blob([moduleText], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${courseModule.title.replace(/\s+/g, "-").toLowerCase()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadBlob(blob, `${courseModule.title.replace(/\s+/g, "-").toLowerCase()}.json`)
   }
 
   return (
     <div className="container py-8 relative">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Course Module Generator</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Course Builder</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Create structured course modules with video outlines and scripts
+          Create structured courses with video outlines and scripts
         </p>
       </div>
 
@@ -116,8 +128,8 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
         <TabsContent value="generate">
           <Card className="relative">
             <CardHeader>
-              <CardTitle>Course Module Generator</CardTitle>
-              <CardDescription>Fill in the details below to generate your course module</CardDescription>
+              <CardTitle>Course Builder</CardTitle>
+              <CardDescription>Fill in the details below to build your course</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -201,7 +213,7 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
                     Generating...
                   </>
                 ) : (
-                  "Generate Course Module"
+                  "Build Course"
                 )}
               </Button>
             </CardFooter>
@@ -214,7 +226,7 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
                     Coming Soon
                   </h2>
                   <p className="text-slate-600 dark:text-slate-400 max-w-md">
-                    Stay tuned to unlock this exciting feature to generate structured course modules with video outlines and scripts!
+                    Stay tuned to unlock the Course Builder to create structured courses with video outlines and scripts!
                   </p>
                   <Button
                     variant="outline"
@@ -249,7 +261,7 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
               </CardHeader>
               <CardContent className="space-y-6">
                 <Accordion type="single" collapsible className="w-full">
-                  {courseModule.videos.map((video: any) => (
+                  {courseModule.videos.map((video: CourseVideo) => (
                     <AccordionItem key={video.id} value={`video-${video.id}`}>
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-start text-left">
@@ -298,7 +310,7 @@ That's all for this video on ${topic}. In the next video, we'll explore ${i < Nu
                       Coming Soon
                     </h2>
                     <p className="text-slate-600 dark:text-slate-400 max-w-md">
-                      Stay tuned to unlock this exciting feature to generate structured course modules with video outlines and scripts!
+                      Stay tuned to unlock the Course Builder to create structured courses with video outlines and scripts!
                     </p>
                     <Button
                       variant="outline"

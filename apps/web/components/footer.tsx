@@ -21,11 +21,11 @@ const Footer = () => {
   return (
     <footer className="bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
-          <div className="col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <Image src={logo} alt="Script AI Logo" width={40} height={40} />
-              <span className="text-2xl font-bold text-slate-800 dark:text-slate-100">Script AI</span>
+        <div className="flex flex-col items-center text-center">
+          <div className="space-y-4 mb-8">
+            <div className="flex items-center justify-center gap-3">
+              <Image src={logo} alt="Creator AI Logo" width={40} height={40} />
+              <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">Creator AI</span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs">
               Personalized AI assistant for content creators.
@@ -39,40 +39,9 @@ const Footer = () => {
               }))}
             />
           </div>
-
-          {Object.entries(footerItems).map(([section, items]) => (
-            <div key={section}>
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">
-                {section}
-              </h3>
-              <ul className="space-y-3">
-                {items.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-slate-100 transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-                {section === "Legal" && (
-                  <li>
-                    <ReportIssue useIcon={false} />
-                  </li>
-                )}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            &copy; {new Date().getFullYear()} Script AI. All rights reserved.
-          </p>
-          <a href="mailto:support@tryscriptai.com" className="text-sm text-purple-500 hover:underline">
-            support@tryscriptai.com
-          </a>
+          <div className="border-t border-slate-200 dark:border-slate-700 w-full pt-8 text-sm text-slate-600 dark:text-slate-400 flex flex-col items-center gap-2">
+            &copy; {new Date().getFullYear()} Creator AI. All rights reserved.
+          </div>
         </div>
       </div>
     </footer>

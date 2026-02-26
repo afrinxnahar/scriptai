@@ -1,12 +1,11 @@
 "use client";
 
-import React, {useEffect, useState} from 'react';
-import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
-import {Label} from '@/components/ui/label';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Info, Loader2, Plus, Sparkles} from 'lucide-react';
-import {toast} from 'sonner';
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Sparkles, Clock, Zap, Globe, Languages } from 'lucide-react';
+import { toast } from 'sonner';
 
 type GenerateSubtitlesFormProps = {
     isGenerating: boolean;
@@ -15,7 +14,7 @@ type GenerateSubtitlesFormProps = {
 };
 
 const sourceLanguages = [
-    { value: 'auto', label: 'Auto Detect' },
+    { value: 'auto', label: 'Auto Detect (Recommended)' },
     { value: 'English', label: 'English' },
     { value: 'Spanish', label: 'Spanish' },
     { value: 'French', label: 'French' },
@@ -28,13 +27,6 @@ const sourceLanguages = [
     { value: 'Russian', label: 'Russian' },
     { value: 'Italian', label: 'Italian' },
     { value: 'Korean', label: 'Korean' },
-    { value: 'Dutch', label: 'Dutch' },
-    { value: 'Turkish', label: 'Turkish' },
-    { value: 'Polish', label: 'Polish' },
-    { value: 'Vietnamese', label: 'Vietnamese' },
-    { value: 'Indonesian', label: 'Indonesian' },
-    { value: 'Thai', label: 'Thai' },
-    { value: 'Bengali', label: 'Bengali' },
 ];
 
 const targetLanguages = [
@@ -43,71 +35,14 @@ const targetLanguages = [
 ];
 
 export function GenerateSubtitlesForm({
-                                          isGenerating,
-                                          videoDuration,
-                                          onGenerate
-                                      }: GenerateSubtitlesFormProps) {
+    isGenerating,
+    videoDuration,
+    onGenerate
+}: GenerateSubtitlesFormProps) {
     const [sourceLanguage, setSourceLanguage] = useState('auto');
     const [targetLanguage, setTargetLanguage] = useState('same');
-    const [showTranslationHint, setShowTranslationHint] = useState(false);
 
-    // Auto-update target language hint when source changes
-    useEffect(() => {
-        if (sourceLanguage !== 'auto' && targetLanguage !== 'same' && sourceLanguage === targetLanguage) {
-            setShowTranslationHint(true);
-        } else {
-            setShowTranslationHint(false);
-        }
-    }, [sourceLanguage, targetLanguage]);
-
-    const handleSourceLanguageChange = (value: string) => {
-        setSourceLanguage(value);
-
-        if (value !== 'auto' && value === targetLanguage) {
-            toast.info("Tip: Source and target are the same. Consider using 'Same as Source' for better performance.");
-        }
-    };
-
-    const handleTargetLanguageChange = (value: string) => {
-        setTargetLanguage(value);
-
-        if (sourceLanguage !== 'auto' && sourceLanguage === value) {
-            toast.info("Tip: Consider using 'Same as Source' when not translating.");
-        }
-    };
-
-    const handleSubmit = async () => {
-        if (!videoDuration || videoDuration <= 0) {
-            toast.error("Video metadata not loaded yet. Please wait.");
-            return;
-        }
-
-        if (!sourceLanguage) {
-            toast.error("Please select a video language.");
-            return;
-        }
-
-        if (!targetLanguage) {
-            toast.error("Please select a subtitle language.");
-            return;
-        }
-
-        if (videoDuration > 600) {
-            toast.warning("This video is quite long. Processing may take several minutes.");
-        }
-
-        const isTranslating = targetLanguage !== 'same' &&
-            (sourceLanguage === 'auto' || sourceLanguage !== targetLanguage);
-
-        if (isTranslating) {
-            toast.info("Generating subtitles with translation. This may take longer.");
-        } else {
-            toast.info("Generating subtitles without translation.");
-        }
-
-        onGenerate(sourceLanguage, targetLanguage);
-    };
-
+    // Calculate estimates
     const getEstimatedTime = () => {
         if (!videoDuration) return null;
         const minutes = Math.ceil(videoDuration / 60);
@@ -115,125 +50,121 @@ export function GenerateSubtitlesForm({
     };
 
     const estimatedTime = getEstimatedTime();
-    const isTranslating = targetLanguage !== 'same' &&
-        (sourceLanguage === 'auto' || sourceLanguage !== targetLanguage);
+    const isTranslating = targetLanguage !== 'same';
+
+    // Smart logic for language hints
+    useEffect(() => {
+        if (sourceLanguage !== 'auto' && targetLanguage !== 'same' && sourceLanguage === targetLanguage) {
+            toast.info("Tip: You selected the same language for Source and Target. Switched to 'Same as Source' for better accuracy.");
+            setTargetLanguage('same');
+        }
+    }, [sourceLanguage, targetLanguage]);
+
+    const handleSubmit = async () => {
+        if (!videoDuration || videoDuration <= 0) {
+            toast.error("Video metadata loading...");
+            return;
+        }
+        if (videoDuration > 1200) {
+            toast.warning("Long video detected. This might take a while.");
+        }
+        onGenerate(sourceLanguage, targetLanguage);
+    };
 
     return (
-        <Card className="w-full max-w-sm mb-4 text-left border-purple-200">
-            <CardHeader className="p-6 pb-4">
-                <CardTitle className="text-lg flex items-center">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate / Translate Subtitles (AI)
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 pt-0">
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="source-language" className="text-xs font-medium">
-                            Video Language
-                        </Label>
-                        <Select
-                            value={sourceLanguage}
-                            onValueChange={handleSourceLanguageChange}
-                            disabled={isGenerating}
-                        >
-                            <SelectTrigger id="source-language">
-                                <SelectValue placeholder="Select video language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {sourceLanguages.map((lang) => (
-                                    <SelectItem key={lang.value} value={lang.value}>
-                                        {lang.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                            Language spoken in the video
-                        </p>
-                    </div>
+        <div className="w-full space-y-6">
 
-                    {/* Target Language Dropdown */}
-                    <div className="space-y-2">
-                        <Label htmlFor="target-language" className="text-xs font-medium">
-                            Subtitle Language
-                        </Label>
-                        <Select
-                            value={targetLanguage}
-                            onValueChange={handleTargetLanguageChange}
-                            disabled={isGenerating}
-                        >
-                            <SelectTrigger id="target-language">
-                                <SelectValue placeholder="Select subtitle language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {targetLanguages.map((lang) => (
-                                    <SelectItem key={lang.value} value={lang.value}>
-                                        {lang.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                            {isTranslating ? 'Subtitles will be translated' : 'No translation applied'}
-                        </p>
-                    </div>
+            {/* --- INPUTS SECTION --- */}
+            <div className="space-y-5">
 
-                    {/* Info message for same language selection */}
-                    {showTranslationHint && (
-                        <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <Info className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
-                            <p className="text-xs text-blue-900">
-                                Source and target are the same. Consider selecting "Same as Source" for faster processing.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Estimated time display */}
-                    {estimatedTime && !isGenerating && (
-                        <div className="text-xs text-muted-foreground text-center pt-2">
-                            Estimated time: ~{estimatedTime} {estimatedTime === 1 ? 'minute' : 'minutes'}
-                        </div>
-                    )}
-
-                    {/* ADDED: Credit cost information */}
-                    {!isGenerating && (
-                        <div className="text-xs text-muted-foreground text-center pt-1 pb-2">
-                            This action will use <strong>1 credit</strong>.
-                        </div>
-                    )}
-
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={isGenerating || !videoDuration || videoDuration <= 0}
-                        className="w-full bg-black hover:bg-black/90"
+                {/* 1. Video Language */}
+                <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-slate-400" />
+                        Video Language
+                    </Label>
+                    <Select
+                        value={sourceLanguage}
+                        onValueChange={setSourceLanguage}
+                        disabled={isGenerating}
                     >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processing...
-                            </>
-                        ) : (
-                            <>
-                                <Plus className="mr-2 h-4 w-4" />
-                                {isTranslating ? 'Generate & Translate' : 'Generate Subtitles'}
-                            </>
-                        )}
-                    </Button>
+                        <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-0 focus:ring-2 focus:ring-violet-500 rounded-xl text-slate-900 dark:text-white shadow-sm font-medium">
+                            <SelectValue placeholder="Select video language" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                            {sourceLanguages.map((lang) => (
+                                <SelectItem key={lang.value} value={lang.value}>
+                                    {lang.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
-                {!videoDuration && (
-                    <p className="mt-4 text-xs text-center text-muted-foreground">
-                        Waiting for video to load...
-                    </p>
-                )}
+                {/* 2. Subtitle Language */}
+                <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                        <Languages className="w-3.5 h-3.5 text-slate-400" />
+                        Subtitle Language
+                    </Label>
+                    <Select
+                        value={targetLanguage}
+                        onValueChange={setTargetLanguage}
+                        disabled={isGenerating}
+                    >
+                        <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-0 focus:ring-2 focus:ring-violet-500 rounded-xl text-slate-900 dark:text-white shadow-sm font-medium">
+                            <SelectValue placeholder="Select subtitle language" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                            {targetLanguages.map((lang) => (
+                                <SelectItem key={lang.value} value={lang.value}>
+                                    {lang.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            {/* --- INFO PILLS --- */}
+            <div className="flex items-center gap-3 py-1">
+                {/* Time Estimate */}
+                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                    <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {estimatedTime ? `~${estimatedTime} mins` : 'calculating...'}
+                    </span>
+                </div>
+
+
+            </div>
+
+            {/* --- ACTION BUTTON --- */}
+            <div className="pt-2">
+                <Button
+                    onClick={handleSubmit}
+                    disabled={isGenerating || !videoDuration || videoDuration <= 0}
+                    className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 rounded-xl font-bold text-base shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                >
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Thinking...
+                        </>
+                    ) : (
+                        <>
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Generate Subtitles
+                        </>
+                    )}
+                </Button>
 
                 {isGenerating && (
-                    <p className="mt-4 text-xs text-center text-muted-foreground">
-                        This may take a few minutes. Please don't close this tab.
+                    <p className="mt-3 text-xs text-center text-slate-400 animate-pulse">
+                        This usually takes about {estimatedTime || 1} minute(s).
                     </p>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

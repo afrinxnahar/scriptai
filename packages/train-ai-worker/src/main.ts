@@ -11,3 +11,6 @@ bootstrap().catch((error) => {
   console.error('❌ Failed to start Train AI Worker:', error);
   process.exit(1);
 });
+
+export const handler = bootstrap;
+export default bootstrap;

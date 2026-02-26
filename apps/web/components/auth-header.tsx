@@ -10,7 +10,7 @@ export default function AuthHeader() {
       <div className="container flex items-center justify-between h-16">
         <Link href="/" className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-slate-500" />
-          <span className="text-xl font-bold">Script AI</span>
+          <span className="text-xl font-bold">Creator AI</span>
         </Link>
 
         <div className="flex items-center gap-4">

@@ -87,10 +87,21 @@ export default function FormStep2({
                 <Label>Video Duration</Label>
                 <p className="text-sm text-muted-foreground">Select a target length for your script.</p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <Button variant={duration === '1min' ? 'default' : 'outline'} onClick={() => setDuration('1min')}>~1 min</Button>
-                    <Button variant={duration === '3min' ? 'default' : 'outline'} onClick={() => setDuration('3min')}>~3 min</Button>
-                    <Button variant={duration === '5min' ? 'default' : 'outline'} onClick={() => setDuration('5min')}>~5 min</Button>
-                    <Button variant={duration === 'custom' ? 'default' : 'outline'} onClick={() => setDuration('custom')}>Custom</Button>
+                    {[
+                        { value: "1min", label: "~1 min" },
+                        { value: "3min", label: "~3 min" },
+                        { value: "5min", label: "~5 min" },
+                        { value: "custom", label: "Custom" },
+                    ].map((opt) => (
+                        <Button
+                            key={opt.value}
+                            variant={duration === opt.value ? "default" : "outline"}
+                            className={duration === opt.value ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
+                            onClick={() => setDuration(opt.value)}
+                        >
+                            {opt.label}
+                        </Button>
+                    ))}
                 </div>
                 {duration === 'custom' && (
                     <div className="pt-2">

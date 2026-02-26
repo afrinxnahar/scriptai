@@ -9,7 +9,7 @@ const itemVariants = {
 }
 
 const steps = [
-    { step: 1, title: "Provide Videos", desc: "Add 3-5 YouTube video links that best represent your style.", icon: Youtube },
+    { step: 1, title: "Select Videos", desc: "Pick 3-5 videos from your channel that best represent your style.", icon: Youtube },
     { step: 2, title: "AI Analysis", desc: "Our AI analyzes your tone, vocabulary, and delivery style.", icon: Bot },
     { step: 3, title: "Start Creating", desc: "Generate personalized scripts that match your unique voice.", icon: PenTool },
 ]
@@ -17,9 +17,9 @@ const steps = [
 export function HowItWorksGuide() {
     return (
         <motion.div variants={itemVariants}>
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible defaultValue="how-it-works" className="w-full">
                 <AccordionItem value="how-it-works">
-                    <AccordionTrigger className="font-semibold">How does AI training work?</AccordionTrigger>
+                    <AccordionTrigger className="font-semibold">How does model training work?</AccordionTrigger>
                     <AccordionContent className="pt-4">
                         <div className="space-y-6">
                             {steps.map(({ step, title, desc, icon: Icon }) => (

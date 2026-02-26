@@ -1,6 +1,6 @@
 # 🚀 Development Setup Guide
 
-This guide will help you set up the Script AI development environment on your local machine.
+This guide will help you set up the Creator AI development environment on your local machine.
 
 ## 📋 Prerequisites
 
