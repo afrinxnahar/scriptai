@@ -6,87 +6,88 @@ import { cn } from "@/lib/utils"
 import Footer from "@/components/footer"
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from 'next/navigation'
+import Link from "next/link"
+import LandingPageNavbar from "@/components/landingPage/LandingPageNavbar"
 
-// Define sections for the Table of Contents
 const sections = [
-  { id: "overview", title: "1. Overview" },
-  { id: "data-collection", title: "2. Data We Collect" },
-  { id: "data-usage", title: "3. How We Use Your Data" },
-  { id: "human-access", title: "4. Human Access to Data" },
-  { id: "storage-security", title: "5. Data Storage & Security" },
-  { id: "user-responsibilities", title: "6. User Responsibilities" },
-  { id: "limited-use", title: "7. Limited Use & Consent" },
-  { id: "third-party-ai", title: "8. Third-Party AI/ML Integrations" },
-  { id: "ai-model-usage", title: "9. AI Model Usage" },
-  { id: "google-api-disclosure", title: "10. Google API Disclosure" },
-  { id: "user-rights", title: "11. User Rights & Controls" },
-  { id: "policy-changes", title: "12. Changes to Policy" },
-  { id: "contact", title: "13. Contact" },
+  { id: "overview", title: "1. Overview & Acceptance of Terms" },
+  { id: "service-nature", title: "2. Nature of Service (No 1:1 Services)" },
+  { id: "eligibility", title: "3. Eligibility" },
+  { id: "prohibited-uses", title: "4. Prohibited Uses & Content Restrictions" },
+  { id: "user-responsibilities", title: "5. User Responsibilities" },
+  { id: "subscriptions-refunds", title: "6. Subscriptions, Billing & Refund Policy" },
+  { id: "disputes-chargebacks", title: "7. Disputes & Chargebacks" },
+  { id: "intellectual-property", title: "8. Intellectual Property & Ownership" },
+  { id: "ai-disclaimer", title: "9. AI Output Disclaimer" },
+  { id: "limitation-liability", title: "10. Limitation of Liability" },
+  { id: "indemnification", title: "11. Indemnification" },
+  { id: "data-collection", title: "12. Data We Collect" },
+  { id: "data-usage", title: "13. How We Use Your Data" },
+  { id: "storage-security", title: "14. Data Storage & Third-Party Processors" },
+  { id: "data-retention", title: "15. Data Retention" },
+  { id: "user-rights", title: "16. Your Rights" },
+  { id: "governing-law", title: "17. Governing Law" },
+  { id: "policy-changes", title: "18. Changes to These Terms" },
+  { id: "contact", title: "19. Contact & Support" },
 ];
 
 const PrivacyAndTerms = () => {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<string>("overview");
-
   const rafIdRef = useRef<number>(0);
 
   useEffect(() => {
     const lenis = new Lenis();
-
     function raf(time: number) {
       lenis.raf(time);
       rafIdRef.current = requestAnimationFrame(raf);
     }
-
     rafIdRef.current = requestAnimationFrame(raf);
-
     return () => {
       cancelAnimationFrame(rafIdRef.current);
       lenis.destroy();
     }
   }, []);
 
-  // Effect for tracking active section for the ToC
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + window.innerHeight / 3;
       let currentSection = "";
-
       sections.forEach(section => {
         const element = document.getElementById(section.id);
         if (element && element.offsetTop <= scrollPosition) {
           currentSection = section.id;
         }
       });
-
       setActiveSection(currentSection);
     };
-
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <div className="bg-gradient-to-b from-purple-50 to-white text-slate-800 min-h-screen">
+<LandingPageNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <button
-          onClick={() => router.push("/")}
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-purple-600 transition-colors font-medium mb-8 group"
-        >
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          Back
-        </button>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-16 text-slate-900">
-          Privacy Policy & Terms of Use
-        </h1>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => router.push("/")}
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-purple-600 transition-colors font-medium mb-16 group"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Back
+          </button>
+
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-16 text-slate-900 w-full">
+            Privacy Policy & Terms of Use
+          </h1>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-12">
-          {/* Table of Contents - Sticky */}
+
           <aside className="hidden lg:block">
-            <nav className="sticky top-24">
+            <nav className="sticky top-20 mb-8">
               <ul className="space-y-3">
                 {sections.map(section => (
                   <li key={section.id}>
@@ -107,122 +108,196 @@ const PrivacyAndTerms = () => {
             </nav>
           </aside>
 
-          {/* Main Content */}
           <main className="lg:col-span-3 space-y-12">
-            <PolicySection id="overview" title="1. Overview">
+
+            <PolicySection id="overview" title="1. Overview & Acceptance of Terms">
               <p>
-                Creator AI is an AI-powered assistant that helps content creators generate high-quality
-                YouTube scripts, titles, thumbnails, and courses. By using our service, you agree
-                to the following privacy and usage terms.
+                Creator AI (formerly Script AI) is a subscription-based AI SaaS platform
+                that provides automated content generation tools for creators.
+                By accessing or using our service, you agree to be bound by these Terms
+                and our Privacy Policy.
               </p>
-            </PolicySection>
-
-            <PolicySection id="data-collection" title="2. Data We Collect">
-              <p>We may access the following to deliver core features:</p>
-              <ul className="list-disc pl-5 space-y-2 mt-4 marker:text-purple-500">
-                <li>Your email and basic YouTube profile information.</li>
-                <li>Channel and video metadata (titles, descriptions, tags).</li>
-                <li>Videos or links you provide for training.</li>
-                <li>Content you generate with Creator AI.</li>
-                <li>Basic usage metrics to improve our service.</li>
-              </ul>
-            </PolicySection>
-
-            <PolicySection id="data-usage" title="3. How We Use Your Data">
-              <p>We use your data strictly to:</p>
-              <ul className="list-disc pl-5 space-y-2 mt-4 marker:text-purple-500">
-                <li>Personalize your AI assistant.</li>
-                <li>Improve the quality of generated content.</li>
-                <li>Provide relevant research and references.</li>
-                <li>Maintain your account and session.</li>
-              </ul>
-              <p className="mt-4">
-                Your data is never sold, transferred, or used for advertising.
-              </p>
-            </PolicySection>
-
-            <PolicySection id="human-access" title="4. Human Access to Data">
               <p>
-                Our systems are automated. No human will access your data unless you request support, or it's required for security or legal compliance.
+                If you do not agree, you must discontinue use immediately.
               </p>
             </PolicySection>
 
-            <PolicySection id="storage-security" title="5. Data Storage & Security">
+            <PolicySection id="service-nature" title="2. Nature of Service (No 1:1 Services)">
               <p>
-                Your data is encrypted in transit and at rest. We take all reasonable measures to protect it, and you can request data deletion at any time.
+                Creator AI is a self-serve software platform delivering automated,
+                pre-built digital functionality.
               </p>
-            </PolicySection>
-
-            <PolicySection id="user-responsibilities" title="6. User Responsibilities">
               <ul className="list-disc pl-5 space-y-2 marker:text-purple-500">
-                <li>Do not upload copyrighted content you don’t own.</li>
-                <li>Do not use our service to spread misinformation.</li>
-                <li>Our service is not for children under 13.</li>
+                <li>We do NOT provide 1:1 consulting or freelance services.</li>
+                <li>We do NOT offer customized done-for-you services.</li>
+                <li>All outputs are generated automatically by AI systems.</li>
               </ul>
             </PolicySection>
 
-            <PolicySection id="limited-use" title="7. Limited Use & Consent">
+            <PolicySection id="eligibility" title="3. Eligibility">
               <p>
-                We affirm that the use and transfer of raw or derived user data received from Google Workspace APIs strictly adhere to the Google User Data Policy, including the Limited Use requirements.
-              </p>
-              <p>
-                We do not use this data to train or improve generalized AI or machine learning models beyond the personalized user's context.
+                You must be at least 13 years old (or the minimum age required in your jurisdiction).
+                By using the service, you represent that you meet these requirements.
               </p>
             </PolicySection>
 
-            <PolicySection id="third-party-ai" title="8. Third-Party AI/ML Integrations">
+            <PolicySection id="prohibited-uses" title="4. Prohibited Uses & Content Restrictions">
+              <p>You may NOT use Creator AI to generate or distribute content that:</p>
+              <ul className="list-disc pl-5 space-y-2 marker:text-purple-500">
+                <li>Is sexually explicit, pornographic, or NSFW.</li>
+                <li>Promotes violence, hate speech, or harassment.</li>
+                <li>Is illegal or promotes illegal activity.</li>
+                <li>Infringes intellectual property rights.</li>
+                <li>Impersonates individuals or entities.</li>
+                <li>Spreads misinformation or fraud.</li>
+              </ul>
               <p>
-                We do not share user data obtained from Google APIs with any third-party AI/ML services for generalized training or model improvement.
-              </p>
-              <p>
-                Any AI/ML processing by third parties occurs only with your explicit consent and solely for your personalized use case.
-              </p>
-              <p>
-                Our app does not currently feature integrations that use user data to train generalized AI or machine learning models.
-              </p>
-            </PolicySection>
-
-            <PolicySection id="ai-model-usage" title="9. AI Model Usage">
-              <p>
-                AI-generated content should always be reviewed before publishing. We do not guarantee the accuracy of any output.
+                Violation may result in immediate suspension or permanent termination.
               </p>
             </PolicySection>
 
-            <PolicySection id="google-api-disclosure" title="10. Google API Disclosure">
+            <PolicySection id="user-responsibilities" title="5. User Responsibilities">
               <p>
-                Creator AI’s use and transfer of information received from Google APIs will adhere to the{" "}
-                <PolicyLink href="https://developers.google.com/terms/api-services-user-data-policy">
-                  Google API Services User Data Policy
-                </PolicyLink>, including the Limited Use requirements.
+                You are solely responsible for reviewing and editing AI-generated content
+                before publishing.
               </p>
               <p>
-                We request only the minimum necessary scopes required for app functionality.
-              </p>
-            </PolicySection>
-
-            <PolicySection id="user-rights" title="11. User Rights & Controls">
-              <p>
-                You can revoke access to your Google account at any time through your Google Account settings.
-              </p>
-              <p>
-                You may request deletion of your data by contacting us at the email below; we will promptly process such requests in compliance with applicable policies.
+                You agree not to misuse the platform or attempt to bypass rate limits,
+                subscription tiers, or safeguards.
               </p>
             </PolicySection>
 
-            <PolicySection id="policy-changes" title="12. Changes to Policy">
+            <PolicySection id="subscriptions-refunds" title="6. Subscriptions, Billing & Refund Policy">
               <p>
-                We may update this policy as our service evolves. Major changes will be communicated via email or in-app notifications.
+                Creator AI operates on a recurring subscription model.
+                Payments are processed via third-party providers.
+              </p>
+              <p>
+                Subscription fees are non-refundable except where required by law.
+                Cancellation stops future billing but does not trigger retroactive refunds.
               </p>
             </PolicySection>
 
-            <PolicySection id="contact" title="13. Contact">
+            <PolicySection id="disputes-chargebacks" title="7. Disputes & Chargebacks">
               <p>
-                For questions or data requests, please contact us at{" "}
-                <PolicyLink href="mailto:support@tryscriptai.com">
-                  support@tryscriptai.com
-                </PolicyLink>.
+                If you experience a billing issue, you must contact us before initiating
+                a chargeback.
+              </p>
+              <p>
+                Fraudulent chargebacks may result in account suspension and recovery actions.
               </p>
             </PolicySection>
+
+            <PolicySection id="intellectual-property" title="8. Intellectual Property & Ownership">
+              <p>
+                You retain ownership of your inputs and generated outputs,
+                subject to compliance with these Terms.
+              </p>
+              <p>
+                Creator AI retains ownership of all platform technology,
+                algorithms, branding, and infrastructure.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="ai-disclaimer" title="9. AI Output Disclaimer">
+              <p>
+                AI outputs may contain inaccuracies.
+                We do not guarantee originality, factual correctness,
+                or suitability for any purpose.
+              </p>
+              <p>
+                You assume full responsibility for how generated content is used.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="limitation-liability" title="10. Limitation of Liability">
+              <p>
+                To the maximum extent permitted by law,
+                Creator AI shall not be liable for indirect,
+                incidental, consequential, or special damages.
+              </p>
+              <p>
+                Total liability shall not exceed the amount paid
+                by you in the previous 3 months.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="indemnification" title="11. Indemnification">
+              <p>
+                You agree to indemnify and hold harmless Creator AI
+                from claims arising out of your use of the service,
+                violation of these Terms, or infringement of third-party rights.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="data-collection" title="12. Data We Collect">
+              <ul className="list-disc pl-5 space-y-2 marker:text-purple-500">
+                <li>Email and account information</li>
+                <li>Usage logs and analytics</li>
+                <li>Content inputs and outputs</li>
+                <li>Billing metadata (processed by payment provider)</li>
+              </ul>
+            </PolicySection>
+
+            <PolicySection id="data-usage" title="13. How We Use Your Data">
+              <p>
+                Data is used to operate the platform,
+                improve performance, prevent abuse,
+                and provide support.
+              </p>
+              <p>
+                We do not sell personal data.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="storage-security" title="14. Data Storage & Third-Party Processors">
+              <p>
+                Data is encrypted in transit and at rest.
+                We rely on secure cloud providers and AI APIs
+                under contractual data protection obligations.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="data-retention" title="15. Data Retention">
+              <p>
+                Data is retained only as long as necessary
+                for service delivery and legal compliance.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="user-rights" title="16. Your Rights">
+              <p>
+                You may request access, correction, or deletion
+                of your data by contacting support.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="governing-law" title="17. Governing Law">
+              <p>
+                These Terms are governed by applicable international laws.
+                Any disputes shall be resolved in the appropriate jurisdiction.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="policy-changes" title="18. Changes to These Terms">
+              <p>
+                We may update these Terms periodically.
+                Continued use after changes constitutes acceptance.
+              </p>
+            </PolicySection>
+
+            <PolicySection id="contact" title="19. Contact & Support">
+              <p>
+                For support, billing issues, or disputes:
+              </p>
+              <p>
+                Email: support@tryscriptai.com
+              </p>
+              <p>
+                We aim to respond within 24–48 business hours.
+              </p>
+            </PolicySection>
+
           </main>
         </div>
       </div>
@@ -231,26 +306,13 @@ const PrivacyAndTerms = () => {
   )
 }
 
-// Helper component for consistent section styling
-const PolicySection = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
+const PolicySection = ({ id, title, children }: any) => (
   <section id={id} className="scroll-mt-20">
     <h2 className="text-2xl font-bold text-slate-900 mb-4">{title}</h2>
     <div className="text-slate-600 leading-relaxed space-y-4">
       {children}
     </div>
   </section>
-);
-
-// Helper component for consistent link styling
-const PolicyLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="font-medium text-purple-600 hover:text-purple-800 underline underline-offset-4 transition-colors"
-  >
-    {children}
-  </a>
 );
 
 export default PrivacyAndTerms;
