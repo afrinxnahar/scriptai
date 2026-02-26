@@ -288,13 +288,14 @@ const PrivacyAndTerms = () => {
 
             <PolicySection id="contact" title="19. Contact & Support">
               <p>
-                For support, billing issues, or disputes:
-              </p>
-              <p>
-                Email: support@tryscriptai.com
-              </p>
-              <p>
-                We aim to respond within 24–48 business hours.
+              For questions, data requests, or support, visit our{" "}
+                <Link href="/contact-us" className="font-medium text-purple-600 hover:text-purple-800 underline underline-offset-4 transition-colors">
+                  Contact Us
+                </Link>{" "}
+                page or email us at{" "}
+                <Link href="mailto:support@tryscriptai.com" className="font-medium text-purple-600 hover:text-purple-800 underline underline-offset-4 transition-colors">
+                  support@tryscriptai.com
+                </Link>
               </p>
             </PolicySection>
 
