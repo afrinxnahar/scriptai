@@ -11,24 +11,23 @@ import LandingPageNavbar from "@/components/landingPage/LandingPageNavbar"
 
 const sections = [
   { id: "overview", title: "1. Overview & Acceptance of Terms" },
-  { id: "service-nature", title: "2. Nature of Service (No 1:1 Services)" },
-  { id: "eligibility", title: "3. Eligibility" },
-  { id: "prohibited-uses", title: "4. Prohibited Uses & Content Restrictions" },
-  { id: "user-responsibilities", title: "5. User Responsibilities" },
-  { id: "subscriptions-refunds", title: "6. Subscriptions, Billing & Refund Policy" },
-  { id: "disputes-chargebacks", title: "7. Disputes & Chargebacks" },
-  { id: "intellectual-property", title: "8. Intellectual Property & Ownership" },
-  { id: "ai-disclaimer", title: "9. AI Output Disclaimer" },
-  { id: "limitation-liability", title: "10. Limitation of Liability" },
-  { id: "indemnification", title: "11. Indemnification" },
-  { id: "data-collection", title: "12. Data We Collect" },
-  { id: "data-usage", title: "13. How We Use Your Data" },
-  { id: "storage-security", title: "14. Data Storage & Third-Party Processors" },
-  { id: "data-retention", title: "15. Data Retention" },
-  { id: "user-rights", title: "16. Your Rights" },
-  { id: "governing-law", title: "17. Governing Law" },
-  { id: "policy-changes", title: "18. Changes to These Terms" },
-  { id: "contact", title: "19. Contact & Support" },
+  { id: "eligibility", title: "2. Eligibility" },
+  { id: "prohibited-uses", title: "3. Prohibited Uses & Content Restrictions" },
+  { id: "user-responsibilities", title: "4. User Responsibilities" },
+  { id: "subscriptions-refunds", title: "5. Subscriptions, Billing & Refund Policy" },
+  { id: "disputes-chargebacks", title: "6. Disputes & Chargebacks" },
+  { id: "intellectual-property", title: "7. Intellectual Property & Ownership" },
+  { id: "ai-disclaimer", title: "8. AI Output Disclaimer" },
+  { id: "limitation-liability", title: "9. Limitation of Liability" },
+  { id: "indemnification", title: "10. Indemnification" },
+  { id: "data-collection", title: "11. Data We Collect" },
+  { id: "data-usage", title: "12. How We Use Your Data" },
+  { id: "storage-security", title: "13. Data Storage & Third-Party Processors" },
+  { id: "data-retention", title: "14. Data Retention" },
+  { id: "user-rights", title: "15. Your Rights" },
+  { id: "governing-law", title: "16. Governing Law" },
+  { id: "policy-changes", title: "17. Changes to These Terms" },
+  { id: "contact", title: "18. Contact & Support" },
 ];
 
 const PrivacyAndTerms = () => {
@@ -122,26 +121,14 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="service-nature" title="2. Nature of Service (No 1:1 Services)">
-              <p>
-                Creator AI is a self-serve software platform delivering automated,
-                pre-built digital functionality.
-              </p>
-              <ul className="list-disc pl-5 space-y-2 marker:text-purple-500">
-                <li>We do NOT provide 1:1 consulting or freelance services.</li>
-                <li>We do NOT offer customized done-for-you services.</li>
-                <li>All outputs are generated automatically by AI systems.</li>
-              </ul>
-            </PolicySection>
-
-            <PolicySection id="eligibility" title="3. Eligibility">
+            <PolicySection id="eligibility" title="2. Eligibility">
               <p>
                 You must be at least 13 years old (or the minimum age required in your jurisdiction).
                 By using the service, you represent that you meet these requirements.
               </p>
             </PolicySection>
 
-            <PolicySection id="prohibited-uses" title="4. Prohibited Uses & Content Restrictions">
+            <PolicySection id="prohibited-uses" title="3. Prohibited Uses & Content Restrictions">
               <p>You may NOT use Creator AI to generate or distribute content that:</p>
               <ul className="list-disc pl-5 space-y-2 marker:text-purple-500">
                 <li>Is sexually explicit, pornographic, or NSFW.</li>
@@ -156,7 +143,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="user-responsibilities" title="5. User Responsibilities">
+            <PolicySection id="user-responsibilities" title="4. User Responsibilities">
               <p>
                 You are solely responsible for reviewing and editing AI-generated content
                 before publishing.
@@ -167,7 +154,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="subscriptions-refunds" title="6. Subscriptions, Billing & Refund Policy">
+            <PolicySection id="subscriptions-refunds" title="5. Subscriptions, Billing & Refund Policy">
               <p>
                 Creator AI operates on a recurring subscription model.
                 Payments are processed via third-party providers.
@@ -178,7 +165,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="disputes-chargebacks" title="7. Disputes & Chargebacks">
+            <PolicySection id="disputes-chargebacks" title="6. Disputes & Chargebacks">
               <p>
                 If you experience a billing issue, you must contact us before initiating
                 a chargeback.
@@ -188,7 +175,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="intellectual-property" title="8. Intellectual Property & Ownership">
+            <PolicySection id="intellectual-property" title="7. Intellectual Property & Ownership">
               <p>
                 You retain ownership of your inputs and generated outputs,
                 subject to compliance with these Terms.
@@ -199,7 +186,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="ai-disclaimer" title="9. AI Output Disclaimer">
+            <PolicySection id="ai-disclaimer" title="8. AI Output Disclaimer">
               <p>
                 AI outputs may contain inaccuracies.
                 We do not guarantee originality, factual correctness,
@@ -210,7 +197,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="limitation-liability" title="10. Limitation of Liability">
+            <PolicySection id="limitation-liability" title="9. Limitation of Liability">
               <p>
                 To the maximum extent permitted by law,
                 Creator AI shall not be liable for indirect,
@@ -222,7 +209,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="indemnification" title="11. Indemnification">
+            <PolicySection id="indemnification" title="10. Indemnification">
               <p>
                 You agree to indemnify and hold harmless Creator AI
                 from claims arising out of your use of the service,
@@ -230,7 +217,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="data-collection" title="12. Data We Collect">
+            <PolicySection id="data-collection" title="11. Data We Collect">
               <ul className="list-disc pl-5 space-y-2 marker:text-purple-500">
                 <li>Email and account information</li>
                 <li>Usage logs and analytics</li>
@@ -239,7 +226,7 @@ const PrivacyAndTerms = () => {
               </ul>
             </PolicySection>
 
-            <PolicySection id="data-usage" title="13. How We Use Your Data">
+            <PolicySection id="data-usage" title="12. How We Use Your Data">
               <p>
                 Data is used to operate the platform,
                 improve performance, prevent abuse,
@@ -250,7 +237,7 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="storage-security" title="14. Data Storage & Third-Party Processors">
+            <PolicySection id="storage-security" title="13. Data Storage & Third-Party Processors">
               <p>
                 Data is encrypted in transit and at rest.
                 We rely on secure cloud providers and AI APIs
@@ -258,35 +245,35 @@ const PrivacyAndTerms = () => {
               </p>
             </PolicySection>
 
-            <PolicySection id="data-retention" title="15. Data Retention">
+            <PolicySection id="data-retention" title="14. Data Retention">
               <p>
                 Data is retained only as long as necessary
                 for service delivery and legal compliance.
               </p>
             </PolicySection>
 
-            <PolicySection id="user-rights" title="16. Your Rights">
+            <PolicySection id="user-rights" title="15. Your Rights">
               <p>
                 You may request access, correction, or deletion
                 of your data by contacting support.
               </p>
             </PolicySection>
 
-            <PolicySection id="governing-law" title="17. Governing Law">
+            <PolicySection id="governing-law" title="16. Governing Law">
               <p>
                 These Terms are governed by applicable international laws.
                 Any disputes shall be resolved in the appropriate jurisdiction.
               </p>
             </PolicySection>
 
-            <PolicySection id="policy-changes" title="18. Changes to These Terms">
+            <PolicySection id="policy-changes" title="17. Changes to These Terms">
               <p>
                 We may update these Terms periodically.
                 Continued use after changes constitutes acceptance.
               </p>
             </PolicySection>
 
-            <PolicySection id="contact" title="19. Contact & Support">
+            <PolicySection id="contact" title="18. Contact & Support">
               <p>
               For questions, data requests, or support, visit our{" "}
                 <Link href="/contact-us" className="font-medium text-purple-600 hover:text-purple-800 underline underline-offset-4 transition-colors">
