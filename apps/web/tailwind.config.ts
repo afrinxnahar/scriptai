@@ -258,8 +258,10 @@ const config: Config = {
           		'0%, 100%': { opacity: '0.5' },
           		'50%': { opacity: '1' },
         	},
-
-		},
+			'scroll': {
+				to: { transform: 'translate(calc(-50% - 0.5rem))' },
+			},
+	},
   		animation: {
 			'wobble': 'wobble 0.8s infinite',
   			'accordion-down': 'accordion-down 0.2s ease-out',
@@ -286,7 +288,7 @@ const config: Config = {
 			'shimmer': 'shimmer 2s linear infinite',
 			'slow-pan': 'slow-pan 25s ease-in-out infinite alternate',
         	'twinkle': 'twinkle 4s ease-in-out infinite',
-			
+			'scroll': 'scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite',
   		}
   	}
   },
