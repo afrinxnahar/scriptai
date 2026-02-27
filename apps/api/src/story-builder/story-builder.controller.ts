@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CreateStoryBuilderSchema, type CreateStoryBuilderInput } from '@repo/validation';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { StoryBuilderService } from './story-builder.service';
 import type { AuthRequest } from '../common/interfaces/auth-request.interface';
 import { getUserId } from '../common/get-user-id';

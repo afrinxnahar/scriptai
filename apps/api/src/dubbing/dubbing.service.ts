@@ -10,7 +10,7 @@ import { randomUUID } from 'crypto';
 import axios from 'axios';
 import FormData from 'form-data';
 import { Observable } from 'rxjs';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 interface PendingProject {
   userId: string;

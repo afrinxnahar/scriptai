@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
 import { trainAiSchema, type TrainAiDto } from '@repo/validation';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import type { AuthRequest } from '../common/interfaces/auth-request.interface';
 import { getUserId } from '../common/get-user-id';
 import { createJobSSE } from '../common/sse';

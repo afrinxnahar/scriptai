@@ -19,7 +19,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CreateThumbnailSchema, type CreateThumbnailInput } from '@repo/validation';
 import type { AuthRequest } from '../common/interfaces/auth-request.interface';
 import { getUserId } from '../common/get-user-id';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { ThumbnailService } from './thumbnail.service';
 import { createJobSSE } from '../common/sse';
 

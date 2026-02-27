@@ -1,35 +1,40 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": [
-    ".env",
-    "**/.env.*local"
-  ],
+  "globalDependencies": [".env", "**/.env.*local"],
   "globalEnv": [
     "NODE_ENV",
+    "PORT",
+    "FRONTEND_DEV_URL",
+    "FRONTEND_PROD_URL",
     "SUPABASE_URL",
     "SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_KEY",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_BACKEND_URL",
+    "NEXT_PUBLIC_BASE_URL",
     "GOOGLE_GENERATIVE_AI_API_KEY",
+    "GOOGLE_GENERATIVE_AI_API_KEYS",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
     "RESEND_API_KEY",
+    "REDIS_URL",
     "REDIS_HOST",
     "REDIS_PORT",
-    "REDIS_PASSWORD"
+    "REDIS_PASSWORD",
+    "MURF_API_KEY",
+    "MURF_API_KEY_2",
+    "ELEVENLABS_API_KEY",
+    "YOUTUBE_API_KEY",
+    "OPENAI_API_KEY",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET"
   ],
   "tasks": {
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
+    "dev": { "cache": false, "persistent": true },
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**",
-        ".tsup/**"
-      ],
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", ".tsup/**"],
       "cache": true,
       "env": [
         "NODE_ENV",
@@ -40,26 +45,28 @@
         "NEXT_PUBLIC_SUPABASE_ANON_KEY",
         "NEXT_PUBLIC_BACKEND_URL",
         "NEXT_PUBLIC_BASE_URL",
-        "OPENAI_API_KEY",
         "GOOGLE_GENERATIVE_AI_API_KEY",
-        "YOUTUBE_API_KEY",
-        "RESEND_API_KEY",
-        "MURF_API_KEY",
-        "ELEVENLABS_API_KEY",
+        "GOOGLE_GENERATIVE_AI_API_KEYS",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
+        "RESEND_API_KEY",
+        "REDIS_URL",
+        "REDIS_HOST",
+        "REDIS_PORT",
+        "REDIS_PASSWORD",
+        "MURF_API_KEY",
+        "MURF_API_KEY_2",
+        "ELEVENLABS_API_KEY",
+        "YOUTUBE_API_KEY",
+        "OPENAI_API_KEY",
         "SUPABASE_URL",
         "SUPABASE_ANON_KEY",
         "SUPABASE_SERVICE_KEY",
-        "REDIS_HOST",
-        "REDIS_PORT",
-        "REDIS_PASSWORD"
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET"
       ]
     },
-    "db:pull": {
-      "dependsOn": ["^build"],
-      "outputs": ["packages/supabase/migrations/**"]
-    },
+    "db:pull": { "dependsOn": ["^build"], "outputs": ["packages/supabase/migrations/**"] },
     "lint": {},
     "type-check": {},
     "test": {},

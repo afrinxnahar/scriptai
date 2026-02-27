@@ -5,7 +5,7 @@ import {
   Res,
   HttpStatus,
   Logger,
-  RawBodyRequest,
+  type RawBodyRequest,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { BillingService } from './billing.service';
