@@ -7,7 +7,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Observable } from 'rxjs';
 import { SupabaseAuthGuard } from '../guards/auth.guard';
-import type { AuthRequest } from '../common/interfaces/auth-request.interface';
+import { AuthRequest } from '../common/interfaces/auth-request.interface';
 import { getUserId } from '../common/get-user-id';
 import { createJobSSE } from '../common/sse';
 import { IdeationService } from './ideation.service';
