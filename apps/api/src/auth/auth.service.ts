@@ -20,8 +20,8 @@ export class AuthService implements OnModuleInit {
   ) {
   }
 
-  async onModuleInit() { 
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+  async onModuleInit() {
+    const apiKey = this.configService?.get<string>('RESEND_API_KEY');
 
     if (apiKey) {
       this.resend = new Resend(apiKey);

@@ -4,6 +4,6 @@
     "baseUrl": "./",
     "outDir": "./dist",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": false
+    "emitDecoratorMetadata": true
   }
 }
