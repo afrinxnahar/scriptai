@@ -3,6 +3,7 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -10,16 +11,22 @@ import { Resend } from 'resend';
 import { generateResetPasswordEmail } from '@repo/email-templates';
 
 @Injectable()
-export class AuthService {
-  private readonly resend: Resend | null = null;
+export class AuthService implements OnModuleInit {
+  private resend: Resend | null = null;
 
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly configService: ConfigService,
   ) {
+  }
+
+  async onModuleInit() { 
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
+
     if (apiKey) {
       this.resend = new Resend(apiKey);
+    } else {
+      console.warn('RESEND_API_KEY missing in environment');
     }
   }
 
