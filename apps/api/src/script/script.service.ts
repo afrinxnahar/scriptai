@@ -10,7 +10,8 @@ import { Queue } from 'bullmq';
 import { SupabaseService } from '../supabase/supabase.service';
 import { type CreateScriptInput, hasEnoughCredits, getMinimumCreditsForGemini } from '@repo/validation';
 import { PDFDocument, rgb, StandardFonts, PDFFont, PDFPage } from 'pdf-lib';
-import { marked, Tokens } from 'marked';
+import { marked } from 'marked';
+import type { Tokens } from 'marked';
 import * as fs from 'fs';
 import * as path from 'path';
 
