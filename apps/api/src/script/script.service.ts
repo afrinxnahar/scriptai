@@ -10,12 +10,14 @@ import { Queue } from 'bullmq';
 import { SupabaseService } from '../supabase/supabase.service';
 import { type CreateScriptInput, hasEnoughCredits, getMinimumCreditsForGemini } from '@repo/validation';
 import { PDFDocument, rgb, StandardFonts, PDFFont, PDFPage } from 'pdf-lib';
-import { marked } from 'marked';
-import type { Tokens } from 'marked';
 import * as fs from 'fs';
 import * as path from 'path';
 
-type Token = Tokens.Generic;
+interface Token {
+  type: string;
+  tokens?: Token[];
+  text?: string;
+}
 type Part = { text: string } | { fileData: { fileUri: string; mimeType: string } };
 type FontSet = { regular: PDFFont; bold: PDFFont; italic: PDFFont };
 
@@ -293,6 +295,7 @@ export class ScriptService {
     currentY -= 20;
 
     // --- Body content ---
+    const { marked } = await import('marked');
     const tokens = marked.lexer(script.content || '');
     for (const token of tokens) {
       if (currentY < margins.bottom) {
