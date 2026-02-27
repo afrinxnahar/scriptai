@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SupabaseModule } from '../supabase/supabase.module';
@@ -8,4 +8,6 @@ import { SupabaseModule } from '../supabase/supabase.module';
   controllers: [AuthController],
   providers: [AuthService],
 })
+
+@Injectable()
 export class AuthModule {}
